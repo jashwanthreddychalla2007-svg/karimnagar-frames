@@ -66,9 +66,9 @@
       "badge": "Best seller",
       "turnaround": "1 day preview",
       "images": [
-        "https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Mug/Red/1651739612.jpg?quality=70&format=webp&w=900",
-        "https://th.bing.com/th/id/OIP.Q95fbVB-OGMY0gEmI0vI8gHaEK?o=7&rm=3&rs=1&pid=ImgDetMain&o=7&rm=3",
-        "https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?auto=format&fit=crop&w=1200&q=80"
+        "/assets/products/magic-mug.webp",
+        "/assets/products/photo-coaster-set.webp",
+        "/assets/products/mini-desk-frame.jpg"
       ],
       "tags": [
         "photo mug",
@@ -135,9 +135,9 @@
       "badge": "Popular gift",
       "turnaround": "Preview before print",
       "images": [
-        "https://ik.imagekit.io/2xkwa8s1i/img/npl_modified_images/Frame_photo/WPHFRCLFTWLBKS07/WPHFRCLFTWLBKS07_1.jpg?tr=w-1200",
-        "https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Wall-Photo-Frame/1632904698.jpg?quality=70&format=webp&w=900",
-        "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?auto=format&fit=crop&w=1200&q=80"
+        "/assets/products/mini-desk-frame.jpg",
+        "/assets/products/photo-coaster-set.webp",
+        "/assets/products/pillow-printing.webp"
       ],
       "tags": [
         "love frame",
@@ -205,8 +205,8 @@
       "turnaround": "Multiple sizes",
       "images": [
         "/assets/products/pillow-printing.webp",
-        "https://www.canvaschamp.in/static/images/landingpage/thumbslider/photopillow/photo-pillow-large1.jpg",
-        "https://cdn.canvaschamp.in/static/images/landingpage/photopillow/pillow-family.jpg"
+        "/assets/products/mini-desk-frame.jpg",
+        "/assets/products/photo-coaster-set.webp"
       ],
       "tags": [
         "photo pillow",
@@ -266,8 +266,8 @@
       "turnaround": "Photo reveal",
       "images": [
         "/assets/products/magic-mug.webp",
-        "https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/v1669126043/Mug/Black/1669126042.jpg?quality=70&format=webp&w=900",
-        "https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?auto=format&fit=crop&w=1200&q=80"
+        "/assets/products/photo-coaster-set.webp",
+        "/assets/products/pillow-printing.webp"
       ],
       "tags": [
         "magic mug",
@@ -308,8 +308,8 @@
       "badge": "Home decor",
       "turnaround": "Matte or glossy",
       "images": [
-        "https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Wall-Photo-Frame/1632904698.jpg?quality=70&format=webp&w=900",
-        "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?auto=format&fit=crop&w=1200&q=80"
+        "/assets/products/mini-desk-frame.jpg",
+        "/assets/products/photo-coaster-set.webp"
       ],
       "tags": [
         "wall frame",
@@ -354,8 +354,10 @@
       "badge": "Combo deal",
       "turnaround": "Custom bundle",
       "images": [
-        "https://th.bing.com/th/id/OIP.Q95fbVB-OGMY0gEmI0vI8gHaEK?o=7&rm=3&rs=1&pid=ImgDetMain&o=7&rm=3",
-        "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=1200&q=80"
+        "/assets/products/magic-mug.webp",
+        "/assets/products/pillow-printing.webp",
+        "/assets/products/mini-desk-frame.jpg",
+        "/assets/products/photo-coaster-set.webp"
       ],
       "tags": [
         "combo",
@@ -406,8 +408,8 @@
       "turnaround": "Quick preview",
       "images": [
         "/assets/products/mini-desk-frame.jpg",
-        "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?auto=format&fit=crop&w=1200&q=80",
-        "https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Wall-Photo-Frame/1632904698.jpg?quality=70&format=webp&w=900"
+        "/assets/products/photo-coaster-set.webp",
+        "/assets/products/pillow-printing.webp"
       ],
       "tags": [
         "mini frame",
@@ -449,8 +451,8 @@
       "turnaround": "Set of 4",
       "images": [
         "/assets/products/photo-coaster-set.webp",
-        "https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?auto=format&fit=crop&w=1200&q=80",
-        "https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Mug/Red/1651739612.jpg?quality=70&format=webp&w=900"
+        "/assets/products/magic-mug.webp",
+        "/assets/products/mini-desk-frame.jpg"
       ],
       "tags": [
         "coasters",
@@ -491,8 +493,10 @@
       "badge": "Premium hamper",
       "turnaround": "Occasion ready",
       "images": [
-        "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=1200&q=80",
-        "https://th.bing.com/th/id/OIP.Q95fbVB-OGMY0gEmI0vI8gHaEK?o=7&rm=3&rs=1&pid=ImgDetMain&o=7&rm=3"
+        "/assets/products/magic-mug.webp",
+        "/assets/products/pillow-printing.webp",
+        "/assets/products/mini-desk-frame.jpg",
+        "/assets/products/photo-coaster-set.webp"
       ],
       "tags": [
         "hamper",
