@@ -199,9 +199,9 @@
       "badge": "Soft finish",
       "turnaround": "Multiple sizes",
       "images": [
+        "/assets/products/pillow-printing.webp",
         "https://www.canvaschamp.in/static/images/landingpage/thumbslider/photopillow/photo-pillow-large1.jpg",
-        "https://cdn.canvaschamp.in/static/images/landingpage/photopillow/pillow-family.jpg",
-        "https://images.unsplash.com/photo-1615874694520-474822394e73?auto=format&fit=crop&w=1200&q=80"
+        "https://cdn.canvaschamp.in/static/images/landingpage/photopillow/pillow-family.jpg"
       ],
       "tags": [
         "photo pillow",
@@ -260,6 +260,7 @@
       "badge": "Surprise pick",
       "turnaround": "Photo reveal",
       "images": [
+        "/assets/products/magic-mug.webp",
         "https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/v1669126043/Mug/Black/1669126042.jpg?quality=70&format=webp&w=900",
         "https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?auto=format&fit=crop&w=1200&q=80"
       ],
@@ -399,6 +400,7 @@
       "badge": "Desk decor",
       "turnaround": "Quick preview",
       "images": [
+        "/assets/products/mini-desk-frame.jpg",
         "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?auto=format&fit=crop&w=1200&q=80",
         "https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Wall-Photo-Frame/1632904698.jpg?quality=70&format=webp&w=900"
       ],
@@ -441,6 +443,7 @@
       "badge": "Cup add-on",
       "turnaround": "Set of 4",
       "images": [
+        "/assets/products/photo-coaster-set.webp",
         "https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?auto=format&fit=crop&w=1200&q=80",
         "https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Mug/Red/1651739612.jpg?quality=70&format=webp&w=900"
       ],
