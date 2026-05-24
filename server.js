@@ -419,6 +419,10 @@ function buildWhatsAppText(order, settings) {
   if (order.notes) {
     lines.push("Notes: " + order.notes);
   }
+  if (order.upload && order.upload.url) {
+    const baseUrl = String(settings.publicUrl || "").replace(/\/$/, "");
+    lines.push("Customer photo: " + (baseUrl ? baseUrl + order.upload.url : order.upload.url));
+  }
   lines.push("");
   lines.push("Please confirm preview and delivery details.");
   const phone = String(settings.whatsappPhone || settings.primaryPhone || "").replace(/[^\d]/g, "");
@@ -476,11 +480,12 @@ async function handleApi(req, res, pathname, url) {
     const identifier = String(body.identifier || body.phone || body.email || "").trim();
     const loginPhoneKey = phoneKey(identifier);
     const loginEmail = normalizeEmail(identifier);
+    const loginUsername = identifier.toLowerCase();
     const user = (db.users || []).find((item) => {
-      return phoneKey(item.phone) === loginPhoneKey || normalizeEmail(item.email) === loginEmail;
+      return phoneKey(item.phone) === loginPhoneKey || normalizeEmail(item.email) === loginEmail || String(item.username || "").toLowerCase() === loginUsername;
     });
     if (!user || !verifyPassword(String(body.password || ""), user.passwordHash)) {
-      error(res, 401, "Invalid mobile number or password.");
+      error(res, 401, "Invalid ID, mobile number, or password.");
       return;
     }
     const token = createSession(db, user);
@@ -814,6 +819,46 @@ async function handleApi(req, res, pathname, url) {
       return;
     }
     json(res, 200, { ok: true, contacts: db.contacts || [] });
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/customers") {
+    const admin = requireAdmin(req, res, db);
+    if (!admin) {
+      return;
+    }
+    const q = String(url.searchParams.get("q") || "").trim().toLowerCase();
+    const users = (db.users || []).filter((user) => user.role !== "admin");
+    const customers = users.map((user) => {
+      const userOrders = (db.orders || []).filter((order) => {
+        return order.userId === user.id || phoneKey(order.customer && order.customer.phone) === phoneKey(user.phone);
+      }).map((order) => ({ ...order, payment: paymentForOrder(order) }));
+      const totalSpent = userOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+      const lastOrder = userOrders[0] || null;
+      return {
+        id: user.id,
+        name: user.name,
+        username: user.username || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        phoneVerified: Boolean(user.phoneVerified),
+        address: user.address || "",
+        createdAt: user.createdAt,
+        orderCount: userOrders.length,
+        totalSpent,
+        lastOrderAt: lastOrder ? lastOrder.createdAt : null,
+        orders: userOrders
+      };
+    }).filter((customer) => {
+      if (!q) {
+        return true;
+      }
+      return [customer.name, customer.email, customer.phone, customer.address, customer.id]
+        .join(" ")
+        .toLowerCase()
+        .includes(q);
+    });
+    json(res, 200, { ok: true, customers });
     return;
   }
 

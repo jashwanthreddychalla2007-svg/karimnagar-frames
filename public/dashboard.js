@@ -5,7 +5,9 @@ const DashboardApp = (() => {
     user: null,
     orders: [],
     settings: null,
-    contacts: []
+    contacts: [],
+    customers: [],
+    customerQuery: ""
   };
 
   const qs = (selector, root = document) => root.querySelector(selector);
@@ -221,6 +223,71 @@ const DashboardApp = (() => {
     `).join("");
   }
 
+  function renderCustomers() {
+    const root = qs("[data-customers-list]");
+    if (!root) {
+      return;
+    }
+    const query = state.customerQuery.trim().toLowerCase();
+    const customers = state.customers.filter((customer) => {
+      if (!query) {
+        return true;
+      }
+      return [customer.name, customer.phone, customer.email, customer.address]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+    if (!customers.length) {
+      root.innerHTML = "<p>No customer accounts found.</p>";
+      return;
+    }
+    root.innerHTML = customers.map((customer) => `
+      <article class="customer-card">
+        <div class="customer-card-head">
+          <div>
+            <strong>${customer.name}</strong>
+            <span>${customer.phone} ${customer.phoneVerified ? "- verified" : "- not verified"}</span>
+          </div>
+          <div>
+            <strong>${customer.orderCount}</strong>
+            <span>orders</span>
+          </div>
+          <div>
+            <strong>${money(customer.totalSpent)}</strong>
+            <span>total value</span>
+          </div>
+        </div>
+        <div class="customer-details">
+          <span>Email: ${customer.email || "Not added"}</span>
+          <span>Address: ${customer.address || "Not added"}</span>
+          <span>Created: ${customer.createdAt ? new Date(customer.createdAt).toLocaleString() : "Unknown"}</span>
+        </div>
+        <div class="mini-orders">
+          ${customer.orders.length ? customer.orders.map((order) => `
+            <div class="mini-order">
+              <strong>${order.id}</strong>
+              <span>${new Date(order.createdAt).toLocaleString()}</span>
+              <span>${orderItemsText(order)}</span>
+              <span>${money(order.total)} - ${order.status}</span>
+              ${order.upload ? `<a href="${order.upload.url}" target="_blank" rel="noopener">Photo</a>` : ""}
+            </div>
+          `).join("") : "<p>No previous orders.</p>"}
+        </div>
+      </article>
+    `).join("");
+  }
+
+  async function loadCustomers() {
+    const root = qs("[data-customers-list]");
+    if (!root || state.user.role !== "admin") {
+      return;
+    }
+    const result = await api("/api/customers");
+    state.customers = result.customers;
+    renderCustomers();
+  }
+
   async function loadOrders() {
     const result = await api("/api/orders");
     state.orders = result.orders;
@@ -239,6 +306,17 @@ const DashboardApp = (() => {
       } catch (error) {
         toast(error.message, "error");
       }
+    });
+  }
+
+  function setupCustomerSearch() {
+    const input = qs("[data-customer-search]");
+    if (!input) {
+      return;
+    }
+    input.addEventListener("input", () => {
+      state.customerQuery = input.value;
+      renderCustomers();
     });
   }
 
@@ -300,6 +378,7 @@ const DashboardApp = (() => {
     setupLogout();
     setupProfile();
     setupRefresh();
+    setupCustomerSearch();
     try {
       const me = await api("/api/auth/me");
       if (!me.user) {
@@ -331,6 +410,7 @@ const DashboardApp = (() => {
       renderSettings();
       await loadOrders();
       if (state.user.role === "admin") {
+        await loadCustomers();
         const contacts = await api("/api/contact");
         state.contacts = contacts.contacts;
         renderMessages();

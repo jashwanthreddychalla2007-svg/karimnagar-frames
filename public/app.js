@@ -236,6 +236,9 @@ const StoreApp = (() => {
     const empty = qs("[data-cart-empty]");
     const total = qs("[data-cart-total]");
     const summary = qs("[data-checkout-summary]");
+    qsa("[data-cart-count]").forEach((node) => {
+      node.textContent = state.cart.reduce((sum, item) => sum + item.quantity, 0);
+    });
     if (!items || !empty || !total) {
       return;
     }

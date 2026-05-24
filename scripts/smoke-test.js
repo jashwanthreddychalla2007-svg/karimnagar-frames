@@ -83,8 +83,8 @@ async function main() {
     const login = await request("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({
-        identifier: "9032428063",
-        password: "Admin@12345"
+        identifier: "karimnagarframes",
+        password: "karimnagar@123"
       })
     });
     const cookie = login.response.headers.get("set-cookie").split(";")[0];
@@ -168,6 +168,15 @@ async function main() {
     }
     if (!ownerOrders.data.orders.some((order) => order.id === checkout.data.order.id && order.payment.status === "Paid")) {
       throw new Error("Owner dashboard order API did not include the updated payment status.");
+    }
+    const customers = await request("/api/customers", {
+      headers: { Cookie: cookie }
+    });
+    if (!customers.data.customers.some((customer) => customer.phone === "9123456780")) {
+      throw new Error("Owner customers API did not include the OTP-created account.");
+    }
+    if (!customers.data.customers.some((customer) => customer.orderCount >= 1 || customer.phone === "9123456780")) {
+      throw new Error("Owner customers API did not include customer order summaries.");
     }
     console.log("Smoke tests passed.");
   } finally {

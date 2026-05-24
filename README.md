@@ -37,8 +37,8 @@ npm test
 Owner:
 
 ```text
-9032428063
-Admin@12345
+karimnagarframes
+karimnagar@123
 ```
 
 Customer:

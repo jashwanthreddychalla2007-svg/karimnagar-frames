@@ -26,8 +26,8 @@ npm test
 Owner dashboard:
 
 ```text
-Mobile: 9032428063
-Password: Admin@12345
+ID: karimnagarframes
+Password: karimnagar@123
 ```
 
 Sample customer:

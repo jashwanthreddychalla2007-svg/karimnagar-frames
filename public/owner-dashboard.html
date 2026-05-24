@@ -22,6 +22,7 @@
     <nav class="side-nav" aria-label="Owner dashboard navigation">
       <a href="#overview">Overview</a>
       <a href="#orders">All Orders</a>
+      <a href="#customers">Customers</a>
       <a href="#messages">Messages</a>
       <a href="#settings">Settings</a>
       <a href="#profile">Owner Profile</a>
@@ -66,6 +67,22 @@
             <tr><td colspan="7">Loading orders...</td></tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <section class="dash-card" id="customers">
+      <div class="dash-card-head">
+        <div>
+          <p class="eyebrow">Customer logins</p>
+          <h2>Accounts and previous orders</h2>
+        </div>
+        <label class="dash-search">
+          <span>Search by mobile number</span>
+          <input type="search" placeholder="Search mobile, name, email, address..." data-customer-search />
+        </label>
+      </div>
+      <div class="customer-list" data-customers-list>
+        <p>Loading customer accounts...</p>
       </div>
     </section>
 

@@ -18,6 +18,7 @@
     "returnWindow": "3 days for damaged or mismatched products",
     "orderPrefix": "KF",
     "businessHours": "10:00 AM to 8:00 PM",
+    "publicUrl": "https://karimnagar-frames.onrender.com",
     "paymentMethods": [
       "Pay on Delivery",
       "UPI after Preview",
@@ -29,11 +30,12 @@
     {
       "id": "usr_admin",
       "name": "Karimnagar Frames Admin",
+      "username": "karimnagarframes",
       "email": "admin@karimnagarframes.local",
       "phone": "9032428063",
       "phoneVerified": true,
       "role": "admin",
-      "passwordHash": "e2aa261379274372540c0f56e3f216fd:3be051a3d2f46648812fdf80f1ff60f141490659fb7240da73c2ea6234a1035f",
+      "passwordHash": "fce1ad4feee60c6da60ecc7fdc284c39:34e70c2b8a03241224d4522687afebc0bc7c4e70b5b745236276bccf568797ea",
       "createdAt": "2026-05-08T00:00:00.000Z",
       "address": "Karimnagar"
     },
