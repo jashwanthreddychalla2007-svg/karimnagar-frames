@@ -193,6 +193,7 @@ const DashboardApp = (() => {
       ["Store", settings.storeName],
       ["Location", settings.location],
       ["WhatsApp", settings.whatsappPhone],
+      ["Instagram", settings.instagramUrl],
       ["Support numbers", (settings.supportPhones || []).join(", ")],
       ["Shipping", settings.shippingWindow],
       ["Returns", settings.returnWindow],
