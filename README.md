@@ -12,7 +12,7 @@ A complete custom gifts storefront for frames, printed cups, pillows, and gift c
 - Payment method selection
 - Mobile number + password login
 - OTP account creation with free Textbelt SMS support and demo fallback
-- WhatsApp order redirect to `9032428063`
+- WhatsApp order redirect to the configured owner number
 - Owner dashboard for all orders, messages, statuses, and payment updates
 - Customer dashboard for personal order tracking
 - JSON database and local upload storage
@@ -34,18 +34,6 @@ npm test
 
 ## Login
 
-Owner:
-
-```text
-karimnagarframes
-karimnagar@123
-```
-
-Customer:
-
-```text
-9876543210
-Customer@12345
-```
+Owner and sample customer credentials are intentionally not shown in this public file. Use the private credentials shared by the owner.
 
 Deployment details are in `DEPLOYMENT.md`.

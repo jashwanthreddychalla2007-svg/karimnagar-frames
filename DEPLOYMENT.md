@@ -23,18 +23,13 @@ npm test
 
 ## Important Accounts
 
-Owner dashboard:
+Owner and sample customer credentials are intentionally masked in public documentation:
 
 ```text
-ID: karimnagarframes
-Password: karimnagar@123
-```
-
-Sample customer:
-
-```text
-Mobile: 9876543210
-Password: Customer@12345
+Owner ID: ********
+Owner Password: ********
+Customer Mobile: ********
+Customer Password: ********
 ```
 
 Change these passwords before taking real orders.
