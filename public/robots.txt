@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /owner-dashboard.html
+Disallow: /customer-dashboard.html
+Disallow: /dashboard.html
+Disallow: /auth.html
+
+Sitemap: https://karimnagar-frames.onrender.com/sitemap.xml
