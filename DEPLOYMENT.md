@@ -26,14 +26,14 @@ npm test
 Owner dashboard:
 
 ```text
-Email: admin@karimnagarframes.local
+Mobile: 9032428063
 Password: Admin@12345
 ```
 
 Sample customer:
 
 ```text
-Email: customer@karimnagarframes.local
+Mobile: 9876543210
 Password: Customer@12345
 ```
 
@@ -63,6 +63,21 @@ UPLOAD_DIR=/var/data/uploads
 ```
 
 Without persistent storage, orders/uploads can be lost when the service restarts or redeploys.
+
+## OTP SMS
+
+Customer accounts are created by mobile number, password, and OTP verification.
+
+The app supports Textbelt's free SMS API by default:
+
+```text
+SMS_PROVIDER=textbelt
+TEXTBELT_KEY=textbelt
+```
+
+Textbelt's free key is only suitable for testing because it has a very small free quota. If the free SMS quota is unavailable, the app shows a demo OTP so testing does not get blocked.
+
+For production, replace `TEXTBELT_KEY` with a paid SMS key or connect another SMS provider in `server.js`.
 
 ### Option 2: Railway
 

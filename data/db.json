@@ -31,6 +31,7 @@
       "name": "Karimnagar Frames Admin",
       "email": "admin@karimnagarframes.local",
       "phone": "9032428063",
+      "phoneVerified": true,
       "role": "admin",
       "passwordHash": "e2aa261379274372540c0f56e3f216fd:3be051a3d2f46648812fdf80f1ff60f141490659fb7240da73c2ea6234a1035f",
       "createdAt": "2026-05-08T00:00:00.000Z",
@@ -41,6 +42,7 @@
       "name": "Sample Customer",
       "email": "customer@karimnagarframes.local",
       "phone": "9876543210",
+      "phoneVerified": true,
       "role": "customer",
       "passwordHash": "7f6b48253b34125e28c191652e7f90a9:ccd65f302c539bfc4383896786acf56c3f791dabecb911fb9a87c3d88cb5dd6f",
       "createdAt": "2026-05-08T00:00:00.000Z",
@@ -48,6 +50,7 @@
     }
   ],
   "sessions": [],
+  "otpChallenges": [],
   "products": [
     {
       "id": "cup-photo-printing",

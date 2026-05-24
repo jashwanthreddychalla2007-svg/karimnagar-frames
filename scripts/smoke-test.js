@@ -58,7 +58,8 @@ async function main() {
       ...process.env,
       PORT: String(port),
       DB_FILE: tempDb,
-      UPLOAD_DIR: tempUploads
+      UPLOAD_DIR: tempUploads,
+      SMS_PROVIDER: "demo"
     },
     stdio: ["ignore", "pipe", "pipe"]
   });
@@ -82,11 +83,33 @@ async function main() {
     const login = await request("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({
-        email: "admin@karimnagarframes.local",
+        identifier: "9032428063",
         password: "Admin@12345"
       })
     });
     const cookie = login.response.headers.get("set-cookie").split(";")[0];
+    const otpRequest = await request("/api/auth/request-otp", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "OTP Customer",
+        phone: "9123456780",
+        email: "otp@example.com",
+        password: "Customer@12345"
+      })
+    });
+    if (!otpRequest.data.challengeId || !otpRequest.data.demoOtp) {
+      throw new Error("OTP request did not return a demo OTP in test mode.");
+    }
+    const otpVerify = await request("/api/auth/verify-otp", {
+      method: "POST",
+      body: JSON.stringify({
+        challengeId: otpRequest.data.challengeId,
+        otp: otpRequest.data.demoOtp
+      })
+    });
+    if (!otpVerify.data.user.phoneVerified || otpVerify.data.user.phone !== "9123456780") {
+      throw new Error("OTP registration did not create a verified phone account.");
+    }
     await request("/api/dashboard/stats", {
       headers: { Cookie: cookie }
     });

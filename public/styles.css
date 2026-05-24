@@ -723,6 +723,18 @@ textarea:focus {
   padding: 22px;
 }
 
+.auth-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.otp-panel {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
 .cart-drawer {
   position: fixed;
   inset: 0;

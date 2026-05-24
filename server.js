@@ -17,6 +17,8 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
 const PAYMENT_METHODS = ["Pay on Delivery", "UPI after Preview", "Pay at Store"];
 const PAYMENT_STATUSES = ["Pending", "Awaiting Confirmation", "Paid", "Failed", "Refunded", "Cancelled"];
+const OTP_TTL_MS = 1000 * 60 * 10;
+const OTP_MAX_ATTEMPTS = 5;
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -118,6 +120,18 @@ function publicUser(user) {
   return safe;
 }
 
+function createSession(db, user) {
+  const token = crypto.randomBytes(32).toString("hex");
+  db.sessions = db.sessions || [];
+  db.sessions.push({
+    token,
+    userId: user.id,
+    createdAt: now(),
+    expiresAt: new Date(Date.now() + SESSION_TTL_MS).toISOString()
+  });
+  return token;
+}
+
 function parseCookies(header) {
   const cookies = {};
   if (!header) {
@@ -168,6 +182,7 @@ function verifyPassword(password, stored) {
 function cleanSessions(db) {
   const time = Date.now();
   db.sessions = (db.sessions || []).filter((session) => new Date(session.expiresAt).getTime() > time);
+  db.otpChallenges = (db.otpChallenges || []).filter((challenge) => new Date(challenge.expiresAt).getTime() > time);
 }
 
 function currentUser(req, db) {
@@ -251,6 +266,71 @@ function validEmail(email) {
 
 function validPhone(phone) {
   return /^[0-9+\s-]{8,15}$/.test(String(phone || ""));
+}
+
+function phoneKey(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return digits.slice(2);
+  }
+  if (digits.length === 11 && digits.startsWith("0")) {
+    return digits.slice(1);
+  }
+  return digits;
+}
+
+function smsPhone(phone) {
+  const raw = String(phone || "").trim();
+  const digits = raw.replace(/\D/g, "");
+  if (raw.startsWith("+")) {
+    return "+" + digits;
+  }
+  if (digits.length === 10) {
+    return "+91" + digits;
+  }
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return "+" + digits;
+  }
+  return "+" + digits;
+}
+
+function generateOtp() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+async function sendOtpSms(phone, otp) {
+  const provider = String(process.env.SMS_PROVIDER || "textbelt").toLowerCase();
+  const message = "Your Karimnagar Frames OTP is " + otp + ". It expires in 10 minutes.";
+  if (provider === "demo") {
+    return { sent: false, provider: "demo", reason: "Demo OTP mode" };
+  }
+  if (provider === "textbelt") {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    try {
+      const response = await fetch("https://textbelt.com/text", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          phone: smsPhone(phone),
+          message,
+          key: process.env.TEXTBELT_KEY || "textbelt"
+        }),
+        signal: controller.signal
+      });
+      const result = await response.json().catch(() => ({}));
+      return {
+        sent: Boolean(result.success),
+        provider: "textbelt",
+        reason: result.error || result.quotaRemaining === 0 ? "Free SMS quota may be finished." : ""
+      };
+    } catch (smsError) {
+      return { sent: false, provider: "textbelt", reason: "SMS service unavailable." };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  return { sent: false, provider, reason: "Unknown SMS provider." };
 }
 
 function productPrice(product, selectedOptions = {}) {
@@ -393,34 +473,32 @@ async function handleApi(req, res, pathname, url) {
 
   if (req.method === "POST" && pathname === "/api/auth/login") {
     const body = await readBody(req);
-    const email = normalizeEmail(body.email);
-    const user = (db.users || []).find((item) => item.email === email);
+    const identifier = String(body.identifier || body.phone || body.email || "").trim();
+    const loginPhoneKey = phoneKey(identifier);
+    const loginEmail = normalizeEmail(identifier);
+    const user = (db.users || []).find((item) => {
+      return phoneKey(item.phone) === loginPhoneKey || normalizeEmail(item.email) === loginEmail;
+    });
     if (!user || !verifyPassword(String(body.password || ""), user.passwordHash)) {
-      error(res, 401, "Invalid email or password.");
+      error(res, 401, "Invalid mobile number or password.");
       return;
     }
-    const token = crypto.randomBytes(32).toString("hex");
-    db.sessions.push({
-      token,
-      userId: user.id,
-      createdAt: now(),
-      expiresAt: new Date(Date.now() + SESSION_TTL_MS).toISOString()
-    });
+    const token = createSession(db, user);
     await writeDb(db);
     setSessionCookie(res, token);
     json(res, 200, { ok: true, user: publicUser(user) });
     return;
   }
 
-  if (req.method === "POST" && pathname === "/api/auth/register") {
+  if (req.method === "POST" && pathname === "/api/auth/request-otp") {
     const body = await readBody(req);
-    const missing = requireFields(body, ["name", "email", "phone", "password"]);
+    const missing = requireFields(body, ["name", "phone", "password"]);
     if (missing) {
       error(res, 400, missing);
       return;
     }
     const email = normalizeEmail(body.email);
-    if (!validEmail(email)) {
+    if (email && !validEmail(email)) {
       error(res, 400, "Please enter a valid email address.");
       return;
     }
@@ -428,35 +506,106 @@ async function handleApi(req, res, pathname, url) {
       error(res, 400, "Please enter a valid phone number.");
       return;
     }
+    const mobileKey = phoneKey(body.phone);
+    if (mobileKey.length < 10) {
+      error(res, 400, "Please enter a valid mobile number.");
+      return;
+    }
     if (String(body.password).length < 8) {
       error(res, 400, "Password must be at least 8 characters.");
       return;
     }
-    if ((db.users || []).some((user) => user.email === email)) {
+    if ((db.users || []).some((user) => phoneKey(user.phone) === mobileKey)) {
+      error(res, 409, "An account with this mobile number already exists.");
+      return;
+    }
+    if (email && (db.users || []).some((user) => normalizeEmail(user.email) === email)) {
       error(res, 409, "An account with this email already exists.");
+      return;
+    }
+    const otp = generateOtp();
+    const challenge = {
+      id: id("otp"),
+      purpose: "register",
+      name: String(body.name).trim().slice(0, 80),
+      email,
+      phone: String(body.phone).trim(),
+      phoneKey: mobileKey,
+      passwordHash: hashPassword(String(body.password)),
+      otpHash: hashPassword(otp),
+      attempts: 0,
+      createdAt: now(),
+      expiresAt: new Date(Date.now() + OTP_TTL_MS).toISOString()
+    };
+    db.otpChallenges = (db.otpChallenges || []).filter((item) => item.phoneKey !== mobileKey);
+    db.otpChallenges.push(challenge);
+    const sms = await sendOtpSms(challenge.phone, otp);
+    await writeDb(db);
+    const demoAllowed = !sms.sent || process.env.SHOW_DEMO_OTP === "true";
+    json(res, 200, {
+      ok: true,
+      challengeId: challenge.id,
+      otpSent: sms.sent,
+      smsProvider: sms.provider,
+      message: sms.sent ? "OTP sent to your mobile number." : "Free SMS was not available, so use the demo OTP shown here.",
+      demoOtp: demoAllowed ? otp : undefined
+    });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/verify-otp") {
+    const body = await readBody(req);
+    const challenge = (db.otpChallenges || []).find((item) => item.id === body.challengeId);
+    if (!challenge) {
+      error(res, 400, "OTP session expired. Please request a new OTP.");
+      return;
+    }
+    if (new Date(challenge.expiresAt).getTime() <= Date.now()) {
+      db.otpChallenges = (db.otpChallenges || []).filter((item) => item.id !== challenge.id);
+      await writeDb(db);
+      error(res, 400, "OTP expired. Please request a new OTP.");
+      return;
+    }
+    if (challenge.attempts >= OTP_MAX_ATTEMPTS) {
+      db.otpChallenges = (db.otpChallenges || []).filter((item) => item.id !== challenge.id);
+      await writeDb(db);
+      error(res, 429, "Too many OTP attempts. Please request a new OTP.");
+      return;
+    }
+    if (!verifyPassword(String(body.otp || ""), challenge.otpHash)) {
+      challenge.attempts += 1;
+      await writeDb(db);
+      error(res, 400, "Invalid OTP.");
+      return;
+    }
+    if ((db.users || []).some((user) => phoneKey(user.phone) === challenge.phoneKey)) {
+      db.otpChallenges = (db.otpChallenges || []).filter((item) => item.id !== challenge.id);
+      await writeDb(db);
+      error(res, 409, "An account with this mobile number already exists.");
       return;
     }
     const user = {
       id: id("usr"),
-      name: String(body.name).trim().slice(0, 80),
-      email,
-      phone: String(body.phone).trim(),
+      name: challenge.name,
+      email: challenge.email,
+      phone: challenge.phone,
+      phoneVerified: true,
       role: "customer",
-      passwordHash: hashPassword(String(body.password)),
+      passwordHash: challenge.passwordHash,
       createdAt: now(),
-      address: String(body.address || "").trim().slice(0, 200)
+      address: ""
     };
     db.users.push(user);
-    const token = crypto.randomBytes(32).toString("hex");
-    db.sessions.push({
-      token,
-      userId: user.id,
-      createdAt: now(),
-      expiresAt: new Date(Date.now() + SESSION_TTL_MS).toISOString()
-    });
+    db.otpChallenges = (db.otpChallenges || []).filter((item) => item.id !== challenge.id);
+    const token = createSession(db, user);
     await writeDb(db);
     setSessionCookie(res, token);
     json(res, 201, { ok: true, user: publicUser(user) });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/register") {
+    error(res, 400, "Please create an account by verifying your mobile number with OTP.");
     return;
   }
 

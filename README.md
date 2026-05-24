@@ -10,6 +10,8 @@ A complete custom gifts storefront for frames, printed cups, pillows, and gift c
 - Cart and checkout
 - Preview image upload
 - Payment method selection
+- Mobile number + password login
+- OTP account creation with free Textbelt SMS support and demo fallback
 - WhatsApp order redirect to `9032428063`
 - Owner dashboard for all orders, messages, statuses, and payment updates
 - Customer dashboard for personal order tracking
@@ -35,14 +37,14 @@ npm test
 Owner:
 
 ```text
-admin@karimnagarframes.local
+9032428063
 Admin@12345
 ```
 
 Customer:
 
 ```text
-customer@karimnagarframes.local
+9876543210
 Customer@12345
 ```
 

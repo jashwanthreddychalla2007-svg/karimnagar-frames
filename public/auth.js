@@ -38,6 +38,10 @@ const AuthApp = (() => {
     });
     qs("[data-login-form]").hidden = name !== "login";
     qs("[data-register-form]").hidden = name !== "register";
+    const otpForm = qs("[data-otp-form]");
+    if (otpForm) {
+      otpForm.hidden = true;
+    }
   }
 
   function formValues(form) {
@@ -57,6 +61,8 @@ const AuthApp = (() => {
   function setupForms() {
     const login = qs("[data-login-form]");
     const register = qs("[data-register-form]");
+    const otpForm = qs("[data-otp-form]");
+    const otpHelp = qs("[data-otp-help]");
     login.addEventListener("submit", async (event) => {
       event.preventDefault();
       try {
@@ -74,11 +80,30 @@ const AuthApp = (() => {
     register.addEventListener("submit", async (event) => {
       event.preventDefault();
       try {
-        const result = await api("/api/auth/register", {
+        const result = await api("/api/auth/request-otp", {
           method: "POST",
           body: JSON.stringify(formValues(register))
         });
-        toast("Account created.");
+        register.hidden = true;
+        otpForm.hidden = false;
+        otpForm.elements.challengeId.value = result.challengeId;
+        otpForm.elements.otp.value = "";
+        otpHelp.textContent = result.message + (result.demoOtp ? " Demo OTP: " + result.demoOtp : "");
+        toast(result.otpSent ? "OTP sent to your mobile." : "Use the demo OTP shown.");
+        otpForm.elements.otp.focus();
+      } catch (error) {
+        toast(error.message, "error");
+      }
+    });
+
+    otpForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        const result = await api("/api/auth/verify-otp", {
+          method: "POST",
+          body: JSON.stringify(formValues(otpForm))
+        });
+        toast("Mobile verified. Account created.");
         window.location.href = dashboardPath(result.user);
       } catch (error) {
         toast(error.message, "error");
