@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Karimnagar Frames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=20260524" />
+  <script defer src="/auth.js?v=20260524"></script>
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <section class="auth-art">
+      <a class="brand" href="/">
+        <span class="brand-mark">KF</span>
+        <span>
+          <strong>Karimnagar Frames</strong>
+          <small>Custom gifts studio</small>
+        </span>
+      </a>
+      <h1>Track orders, save details, and manage custom gifts.</h1>
+      <p>Login as a customer to view your orders or as admin to manage every request.</p>
+      <div class="auth-card-preview">
+        <span>Preview</span>
+        <strong>Love Story Frame</strong>
+        <p>Status: Design preview ready</p>
+      </div>
+    </section>
+
+    <section class="auth-panel">
+      <div class="tabs" role="tablist">
+        <button class="is-active" type="button" data-auth-tab="login">Login</button>
+        <button type="button" data-auth-tab="register">Register</button>
+      </div>
+
+      <form data-login-form class="auth-form">
+        <div class="form-heading">
+          <p class="eyebrow">Welcome back</p>
+          <h2>Login</h2>
+        </div>
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" placeholder="admin@karimnagarframes.local" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <input type="password" name="password" placeholder="Password" required />
+        </label>
+        <button class="btn" type="submit">Login</button>
+      </form>
+
+      <form data-register-form class="auth-form" hidden>
+        <div class="form-heading">
+          <p class="eyebrow">Create account</p>
+          <h2>Register</h2>
+        </div>
+        <label>
+          <span>Name</span>
+          <input type="text" name="name" placeholder="Your name" required />
+        </label>
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" placeholder="you@example.com" required />
+        </label>
+        <label>
+          <span>Phone</span>
+          <input type="tel" name="phone" placeholder="9876543210" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <input type="password" name="password" minlength="8" placeholder="Minimum 8 characters" required />
+        </label>
+        <button class="btn" type="submit">Create Account</button>
+      </form>
+
+      <a class="back-link" href="/">Back to store</a>
+    </section>
+  </main>
+  <div class="toast-stack" data-toast-stack aria-live="polite"></div>
+</body>
+</html>

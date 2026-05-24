@@ -1,0 +1,22 @@
+{
+  "name": "karimnagar-frames",
+  "version": "2.0.0",
+  "description": "Production-ready custom gifts storefront for Karimnagar Frames.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --check server.js && node --check public/app.js && node --check public/auth.js && node --check public/dashboard.js && node --check public/product.js && node scripts/smoke-test.js"
+  },
+  "keywords": [
+    "custom-gifts",
+    "frames",
+    "cups",
+    "pillows",
+    "ecommerce"
+  ],
+  "author": "Karimnagar Frames",
+  "license": "MIT"
+}

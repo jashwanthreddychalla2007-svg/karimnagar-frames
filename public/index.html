@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Karimnagar Frames creates premium custom photo frames, printed cups, photo pillows, and gift combos." />
+  <title>Karimnagar Frames | Premium Custom Gifts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=20260524" />
+  <script defer src="/app.js?v=20260524"></script>
+</head>
+<body data-page="store">
+  <div class="loader" data-loader>
+    <span></span>
+    <p>Preparing your gift studio</p>
+  </div>
+
+  <header class="site-header">
+    <nav class="nav-shell" aria-label="Main navigation">
+      <a class="brand" href="/">
+        <span class="brand-mark">KF</span>
+        <span>
+          <strong>Karimnagar Frames</strong>
+          <small>Custom gifts studio</small>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-label="Toggle navigation">Menu</button>
+      <div class="nav-links" data-nav-menu>
+        <a href="#products">Products</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#process">Process</a>
+        <a href="#faq">FAQ</a>
+        <a href="/product.html?id=cup-photo-printing">Product Page</a>
+        <a href="/auth.html">Login</a>
+        <a class="nav-cta" href="/dashboard.html">Dashboard</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-section" id="home">
+      <div class="hero-copy">
+        <p class="eyebrow">Karimnagar custom gifts studio</p>
+        <h1>Custom photo gifts ready with preview and easy ordering.</h1>
+        <p class="hero-text">Order frames, printed cups, pillows, and gift combos in minutes. Upload your photo, choose payment, confirm the design on WhatsApp, and track every order.</p>
+        <div class="hero-actions">
+          <a class="btn" href="#products">Choose a Gift</a>
+          <button class="btn btn-soft" type="button" data-open-cart>Open Cart</button>
+        </div>
+        <div class="hero-stats" aria-label="Store highlights">
+          <span><strong>3-7</strong> day shipping</span>
+          <span><strong>Preview</strong> before print</span>
+          <span><strong>WhatsApp</strong> support</span>
+        </div>
+      </div>
+
+      <div class="hero-gallery" data-hero-gallery>
+        <figure class="gallery-frame is-active">
+          <img src="https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Mug/Red/1651739612.jpg?quality=70&format=webp&w=900" alt="Custom printed mug" />
+          <figcaption>Printed cups</figcaption>
+        </figure>
+        <figure class="gallery-frame">
+          <img src="https://ik.imagekit.io/2xkwa8s1i/img/npl_modified_images/Frame_photo/WPHFRCLFTWLBKS07/WPHFRCLFTWLBKS07_1.jpg?tr=w-1200" alt="Love story frame" />
+          <figcaption>Photo frames</figcaption>
+        </figure>
+        <figure class="gallery-frame">
+          <img src="https://www.canvaschamp.in/static/images/landingpage/thumbslider/photopillow/photo-pillow-large1.jpg" alt="Printed photo pillow" />
+          <figcaption>Photo pillows</figcaption>
+        </figure>
+        <div class="gallery-controls" role="group" aria-label="Hero gallery">
+          <button type="button" data-gallery-dot="0" class="is-active" aria-label="Show printed cups"></button>
+          <button type="button" data-gallery-dot="1" aria-label="Show photo frames"></button>
+          <button type="button" data-gallery-dot="2" aria-label="Show photo pillows"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="category-strip" aria-label="Product categories">
+      <span>Frames</span>
+      <span>Printed cups</span>
+      <span>Photo pillows</span>
+      <span>Gift combos</span>
+      <span>Mini frames</span>
+      <span>Photo coasters</span>
+      <span>Gift hampers</span>
+      <span>Bulk orders</span>
+    </section>
+
+    <section class="section products-section" id="products">
+      <div class="section-heading">
+        <p class="eyebrow">Premium catalog</p>
+        <h2>Choose a product and customize it</h2>
+        <p>Search by gift type, pick options, add your photo, and place a tracked order without confusion.</p>
+      </div>
+
+      <div class="toolbar">
+        <label class="search-control">
+          <span>Search products</span>
+          <input type="search" placeholder="Search cups, frames, pillows..." data-search />
+        </label>
+        <div class="chip-row" role="group" aria-label="Filter products" data-filter-row>
+          <button class="chip is-active" type="button" data-category="all">All</button>
+          <button class="chip" type="button" data-category="frames">Frames</button>
+          <button class="chip" type="button" data-category="cups">Cups</button>
+          <button class="chip" type="button" data-category="pillows">Pillows</button>
+          <button class="chip" type="button" data-category="combos">Combos</button>
+        </div>
+      </div>
+
+      <div class="skeleton-grid" data-skeleton>
+        <span></span><span></span><span></span>
+      </div>
+      <div class="product-grid" data-product-grid></div>
+      <div class="empty-state" data-empty-state hidden>
+        <strong>No products found</strong>
+        <p>Try another search or category.</p>
+      </div>
+    </section>
+
+    <section class="section split-section" id="gallery">
+      <div class="section-heading align-left">
+        <p class="eyebrow">Design gallery</p>
+        <h2>Photo gifts made for real moments</h2>
+        <p>Use photos, names, dates, quotes, logos, and event messages. Upload the image during checkout or send it later on WhatsApp.</p>
+      </div>
+      <div class="masonry-gallery">
+        <img src="https://cdn.canvaschamp.in/static/images/landingpage/photopillow/pillow-family.jpg" alt="Family photo pillow" />
+        <img src="https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Wall-Photo-Frame/1632904698.jpg?quality=70&format=webp&w=900" alt="Premium wall frame" />
+        <img src="https://th.bing.com/th/id/OIP.Q95fbVB-OGMY0gEmI0vI8gHaEK?o=7&rm=3&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Gift product display" />
+        <img src="https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=1200&q=80" alt="Gift hamper with wrapped presents" />
+      </div>
+    </section>
+
+    <section class="section process-section" id="process">
+      <div class="section-heading">
+        <p class="eyebrow">Order process</p>
+        <h2>Simple from upload to delivery</h2>
+      </div>
+      <div class="process-grid">
+        <article>
+          <span>01</span>
+          <h3>Pick product</h3>
+          <p>Choose a frame, cup, pillow, magic mug, or combo pack.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Customize</h3>
+          <p>Add options, quantity, message, and your photo preview.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Confirm preview</h3>
+          <p>We confirm layout before printing your final gift.</p>
+        </article>
+        <article>
+          <span>04</span>
+          <h3>Pay and track</h3>
+          <p>Choose delivery, UPI after preview, or store payment and track the status from your dashboard.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section reviews-section">
+      <div class="section-heading align-left">
+        <p class="eyebrow">Customer love</p>
+        <h2>Built with care for gifting moments</h2>
+      </div>
+      <div class="review-grid">
+        <article>
+          <strong>Very nice quality</strong>
+          <p>The cup print was bright and the preview helped before printing.</p>
+          <span>Ranjana A.</span>
+        </article>
+        <article>
+          <strong>Perfect frame gift</strong>
+          <p>Names and dates looked clean. Delivery was also quick.</p>
+          <span>Sunil C.</span>
+        </article>
+        <article>
+          <strong>Soft pillow print</strong>
+          <p>The photo pillow looked premium and was ready for gifting.</p>
+          <span>Sneha K.</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="section faq-section" id="faq">
+      <div class="section-heading">
+        <p class="eyebrow">FAQ</p>
+        <h2>Answers before you order</h2>
+      </div>
+      <div class="faq-list">
+        <details open>
+          <summary>Can I upload photos during checkout?</summary>
+          <p>Yes. You can upload one preview image while placing the order. You can also send more photos later on WhatsApp.</p>
+        </details>
+        <details>
+          <summary>Will I get a preview before printing?</summary>
+          <p>Yes. A preview can be confirmed before the final print for custom products.</p>
+        </details>
+        <details>
+          <summary>How does payment work?</summary>
+          <p>You can choose Pay on Delivery, UPI after Preview, or Pay at Store during checkout. The owner confirms payment status from the dashboard.</p>
+        </details>
+        <details>
+          <summary>How long does delivery take?</summary>
+          <p>Shipping usually takes 3 to 7 working days depending on your location.</p>
+        </details>
+        <details>
+          <summary>Do you support bulk orders?</summary>
+          <p>Yes. Bulk orders for events, offices, schools, and branding can be discussed through WhatsApp.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="section contact-section" id="contact">
+      <div>
+        <p class="eyebrow">Contact</p>
+        <h2>Need help choosing the right gift?</h2>
+        <p>Send your idea and phone number. We will help with product choice, layout, payment, and delivery details.</p>
+      </div>
+      <form class="contact-form" data-contact-form>
+        <input type="text" name="name" placeholder="Your name" required />
+        <input type="tel" name="phone" placeholder="Phone number" required />
+        <input type="email" name="email" placeholder="Email optional" />
+        <textarea name="message" rows="4" placeholder="Tell us what you want to print" required></textarea>
+        <button class="btn" type="submit">Send Message</button>
+      </form>
+    </section>
+  </main>
+
+  <aside class="cart-drawer" data-cart-drawer aria-hidden="true">
+    <div class="drawer-backdrop" data-close-cart></div>
+    <section class="drawer-panel" aria-label="Shopping cart">
+      <div class="drawer-head">
+        <div>
+          <p class="eyebrow">Quote cart</p>
+          <h2>Your gifts</h2>
+        </div>
+        <button class="icon-btn" type="button" data-close-cart aria-label="Close cart">X</button>
+      </div>
+      <div class="cart-items" data-cart-items></div>
+      <div class="cart-empty" data-cart-empty>
+        <strong>Your cart is empty</strong>
+        <p>Add a product to build your custom quote.</p>
+      </div>
+      <div class="drawer-total">
+        <span>Estimated total</span>
+        <strong data-cart-total>Rs. 0</strong>
+      </div>
+      <button class="btn" type="button" data-checkout>Checkout</button>
+      <button class="btn btn-outline" type="button" data-clear-cart>Clear cart</button>
+    </section>
+  </aside>
+
+  <dialog class="product-modal" data-product-modal>
+    <button class="icon-btn dialog-close" type="button" data-close-product aria-label="Close product">X</button>
+    <div class="modal-body" data-product-modal-content></div>
+  </dialog>
+
+  <dialog class="checkout-modal" data-checkout-modal>
+    <button class="icon-btn dialog-close" type="button" data-close-checkout aria-label="Close checkout">X</button>
+    <form class="checkout-form" data-checkout-form>
+      <div class="form-heading">
+        <p class="eyebrow">Checkout</p>
+        <h2>Confirm your custom order</h2>
+      </div>
+      <div class="form-grid">
+        <input type="text" name="name" placeholder="Your name" required />
+        <input type="tel" name="phone" placeholder="Phone number" required />
+        <input type="email" name="email" placeholder="Email optional" />
+        <input type="text" name="address" placeholder="Delivery address" />
+      </div>
+      <textarea name="notes" rows="4" placeholder="Names, dates, quote, colors, or any design instruction"></textarea>
+      <label class="upload-box">
+        <span>Upload preview photo</span>
+        <input type="file" accept="image/*" data-upload-input />
+      </label>
+      <div class="upload-preview" data-upload-preview hidden></div>
+      <section class="payment-panel" aria-label="Payment method">
+        <div>
+          <p class="eyebrow">Payment</p>
+          <h3>Choose how you want to pay</h3>
+        </div>
+        <div class="payment-methods">
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="Pay on Delivery" checked />
+            <span>
+              <strong>Pay on Delivery</strong>
+              <small>Pay when the order is delivered or collected.</small>
+            </span>
+          </label>
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="UPI after Preview" />
+            <span>
+              <strong>UPI after Preview</strong>
+              <small>Owner shares payment details after design approval.</small>
+            </span>
+          </label>
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="Pay at Store" />
+            <span>
+              <strong>Pay at Store</strong>
+              <small>Visit the studio and complete payment in person.</small>
+            </span>
+          </label>
+        </div>
+        <input type="text" name="paymentReference" placeholder="Payment reference optional" />
+      </section>
+      <div class="checkout-summary" data-checkout-summary></div>
+      <button class="btn" type="submit">Place Order</button>
+    </form>
+  </dialog>
+
+  <div class="toast-stack" data-toast-stack aria-live="polite"></div>
+
+  <a class="floating-whatsapp" href="https://wa.me/9032428063" target="_blank" rel="noopener">WhatsApp</a>
+
+  <footer class="site-footer">
+    <div>
+      <a class="brand footer-brand" href="/">
+        <span class="brand-mark">KF</span>
+        <span>
+          <strong>Karimnagar Frames</strong>
+          <small>Custom gifts studio</small>
+        </span>
+      </a>
+      <p>Custom printed gifts made in India. Preview before print, local support, and order tracking.</p>
+    </div>
+    <div class="footer-links">
+      <a href="#products">Products</a>
+      <a href="/auth.html">Login</a>
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="https://wa.me/9032428063" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+  </footer>
+</body>
+</html>

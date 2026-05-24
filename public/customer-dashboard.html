@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer Dashboard | Karimnagar Frames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=20260524" />
+  <script defer src="/dashboard.js?v=20260524"></script>
+</head>
+<body class="dashboard-page" data-dashboard-scope="customer">
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span class="brand-mark">KF</span>
+      <span>
+        <strong>Karimnagar Frames</strong>
+        <small>Customer dashboard</small>
+      </span>
+    </a>
+    <nav class="side-nav" aria-label="Customer dashboard navigation">
+      <a href="#overview">Overview</a>
+      <a href="#orders">My Orders</a>
+      <a href="#profile">My Profile</a>
+    </nav>
+    <button class="btn btn-outline" type="button" data-theme-toggle>Toggle Theme</button>
+    <button class="btn" type="button" data-logout>Logout</button>
+  </aside>
+
+  <main class="dashboard-main">
+    <header class="dashboard-top">
+      <div>
+        <p class="eyebrow">Customer dashboard</p>
+        <h1 data-dashboard-title>Loading customer account</h1>
+      </div>
+      <a class="btn btn-soft" href="/">Back to Store</a>
+    </header>
+
+    <section class="dash-grid" id="overview" data-stats></section>
+
+    <section class="dash-card" id="orders">
+      <div class="dash-card-head">
+        <div>
+          <p class="eyebrow">My orders</p>
+          <h2>Track your custom gifts</h2>
+        </div>
+        <a class="btn btn-outline" href="/#products">Order More</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody data-orders-table>
+            <tr><td colspan="7">Loading your orders...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="dash-card" id="profile">
+      <div class="dash-card-head">
+        <div>
+          <p class="eyebrow">My profile</p>
+          <h2>Your details</h2>
+        </div>
+      </div>
+      <form class="profile-form" data-profile-form>
+        <label>
+          <span>Name</span>
+          <input type="text" name="name" required />
+        </label>
+        <label>
+          <span>Phone</span>
+          <input type="tel" name="phone" required />
+        </label>
+        <label>
+          <span>Address</span>
+          <textarea name="address" rows="3"></textarea>
+        </label>
+        <button class="btn" type="submit">Save Profile</button>
+      </form>
+    </section>
+  </main>
+
+  <div class="toast-stack" data-toast-stack aria-live="polite"></div>
+</body>
+</html>
