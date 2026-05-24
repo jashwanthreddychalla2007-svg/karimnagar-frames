@@ -137,7 +137,8 @@ const DashboardApp = (() => {
           ` : `<strong>${order.status}</strong>`}
         </td>
         <td>
-          ${order.whatsappUrl ? `<a class="btn btn-outline" href="${order.whatsappUrl}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
+          ${isAdmin && order.customerWhatsappUrl ? `<a class="btn btn-outline" href="${order.customerWhatsappUrl}" target="_blank" rel="noopener">Chat Customer</a>` : ""}
+          ${!isAdmin && order.whatsappUrl ? `<a class="btn btn-outline" href="${order.whatsappUrl}" target="_blank" rel="noopener">Chat Owner</a>` : ""}
           ${order.upload ? `<a class="btn btn-outline" href="${order.upload.url}" target="_blank" rel="noopener">Image</a>` : ""}
         </td>
       </tr>

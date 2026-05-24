@@ -429,6 +429,57 @@ function buildWhatsAppText(order, settings) {
   return "https://wa.me/" + phone + "?text=" + encodeURIComponent(lines.join("\n"));
 }
 
+function whatsAppCustomerPhone(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (digits.length === 10) {
+    return "91" + digits;
+  }
+  if (digits.length === 11 && digits.startsWith("0")) {
+    return "91" + digits.slice(1);
+  }
+  return digits;
+}
+
+function orderPhotoUrl(order, settings) {
+  if (!order.upload || !order.upload.url) {
+    return "";
+  }
+  const baseUrl = String(settings.publicUrl || "").replace(/\/$/, "");
+  return baseUrl ? baseUrl + order.upload.url : order.upload.url;
+}
+
+function buildCustomerWhatsAppText(order, settings) {
+  const lines = [];
+  const payment = paymentForOrder(order);
+  lines.push("Hello " + order.customer.name + ", Karimnagar Frames here.");
+  lines.push("Order: " + order.id);
+  lines.push("Status: " + order.status);
+  lines.push("Payment: " + payment.method + " (" + payment.status + ")");
+  lines.push("Total: Rs. " + order.total);
+  lines.push("");
+  lines.push("Items:");
+  order.items.forEach((item) => {
+    lines.push("- " + item.name + " x " + item.quantity);
+  });
+  const photoUrl = orderPhotoUrl(order, settings);
+  if (photoUrl) {
+    lines.push("");
+    lines.push("Uploaded photo: " + photoUrl);
+  }
+  lines.push("");
+  lines.push("Please reply here for preview, payment, or delivery updates.");
+  return "https://wa.me/" + whatsAppCustomerPhone(order.customer.phone) + "?text=" + encodeURIComponent(lines.join("\n"));
+}
+
+function orderForResponse(order, settings) {
+  return {
+    ...order,
+    payment: paymentForOrder(order),
+    whatsappUrl: buildWhatsAppText(order, settings),
+    customerWhatsappUrl: buildCustomerWhatsAppText(order, settings)
+  };
+}
+
 async function handleApi(req, res, pathname, url) {
   const db = await readDb();
   cleanSessions(db);
@@ -659,7 +710,7 @@ async function handleApi(req, res, pathname, url) {
       return;
     }
     const orders = (user.role === "admin" ? db.orders : db.orders.filter((order) => order.userId === user.id))
-      .map((order) => ({ ...order, payment: paymentForOrder(order) }));
+      .map((order) => orderForResponse(order, db.settings));
     json(res, 200, { ok: true, orders });
     return;
   }
@@ -728,6 +779,7 @@ async function handleApi(req, res, pathname, url) {
       updatedAt: now()
     };
     order.whatsappUrl = buildWhatsAppText(order, db.settings);
+    order.customerWhatsappUrl = buildCustomerWhatsAppText(order, db.settings);
     db.orders.unshift(order);
     await writeDb(db);
     json(res, 201, { ok: true, order });
@@ -753,8 +805,9 @@ async function handleApi(req, res, pathname, url) {
     }
     order.status = body.status;
     order.updatedAt = now();
+    order.customerWhatsappUrl = buildCustomerWhatsAppText(order, db.settings);
     await writeDb(db);
-    json(res, 200, { ok: true, order });
+    json(res, 200, { ok: true, order: orderForResponse(order, db.settings) });
     return;
   }
 
@@ -782,8 +835,9 @@ async function handleApi(req, res, pathname, url) {
     order.payment.updatedAt = now();
     order.updatedAt = now();
     order.whatsappUrl = buildWhatsAppText(order, db.settings);
+    order.customerWhatsappUrl = buildCustomerWhatsAppText(order, db.settings);
     await writeDb(db);
-    json(res, 200, { ok: true, order });
+    json(res, 200, { ok: true, order: orderForResponse(order, db.settings) });
     return;
   }
 

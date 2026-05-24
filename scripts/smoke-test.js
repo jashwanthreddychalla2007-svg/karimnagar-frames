@@ -146,6 +146,10 @@ async function main() {
         payment: {
           method: "UPI after Preview",
           reference: "SMOKE-UPI-1"
+        },
+        upload: {
+          name: "smoke.png",
+          dataUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
         }
       })
     });
@@ -165,6 +169,12 @@ async function main() {
     }
     if (!ownerOrders.data.orders.some((order) => String(order.whatsappUrl || "").includes("9032428063"))) {
       throw new Error("WhatsApp order URL does not use the owner phone number.");
+    }
+    if (!ownerOrders.data.orders.some((order) => String(order.whatsappUrl || "").includes("Customer%20photo"))) {
+      throw new Error("Customer uploaded photo link is missing from the owner WhatsApp message.");
+    }
+    if (!ownerOrders.data.orders.some((order) => String(order.customerWhatsappUrl || "").includes("919876543210"))) {
+      throw new Error("Owner WhatsApp chat URL does not target the customer mobile number.");
     }
     if (!ownerOrders.data.orders.some((order) => order.id === checkout.data.order.id && order.payment.status === "Paid")) {
       throw new Error("Owner dashboard order API did not include the updated payment status.");
