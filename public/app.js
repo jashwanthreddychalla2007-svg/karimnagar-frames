@@ -9,6 +9,7 @@ const StoreApp = (() => {
     query: "",
     cart: [],
     uploads: {},
+    uploadTasks: {},
     galleryIndex: 0
   };
 
@@ -165,6 +166,63 @@ const StoreApp = (() => {
       requirement.labels.push("Photo " + (requirement.labels.length + 1));
     }
     return requirement;
+  }
+
+  function estimateDataUrlBytes(dataUrl) {
+    const base64 = String(dataUrl || "").split(",")[1] || "";
+    return Math.floor(base64.length * 0.75);
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => resolve(String(reader.result || "")));
+      reader.addEventListener("error", () => reject(new Error("Could not read this photo.")));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImage(dataUrl) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("Could not prepare this photo."));
+      image.src = dataUrl;
+    });
+  }
+
+  async function optimizePhoto(file) {
+    if (!["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.type)) {
+      throw new Error("Only PNG, JPG, JPEG, and WEBP images are allowed.");
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      throw new Error("Photo is too large. Please choose an image under 12 MB.");
+    }
+    const rawDataUrl = await readFileAsDataUrl(file);
+    const image = await loadImage(rawDataUrl);
+    const maxSide = 1400;
+    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d", { alpha: false });
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+    let dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+    if (estimateDataUrlBytes(dataUrl) > 1.2 * 1024 * 1024) {
+      dataUrl = canvas.toDataURL("image/jpeg", 0.68);
+    }
+    if (estimateDataUrlBytes(dataUrl) > 4 * 1024 * 1024) {
+      throw new Error("This photo is still too large after optimization. Please crop or choose a smaller photo.");
+    }
+    return {
+      name: file.name.replace(/\.[^.]+$/, "") + ".jpg",
+      dataUrl,
+      size: estimateDataUrlBytes(dataUrl)
+    };
   }
 
   async function addToCart(product, options = {}, quantity = 1, customFields = {}) {
@@ -450,7 +508,7 @@ const StoreApp = (() => {
                 <label class="upload-box">
                   <span>${label}${required ? " *" : ""}</span>
                   <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" data-upload-slot="${slotKey}" data-upload-label="${label}" data-upload-item="${key}" data-upload-product="${item.productId}" ${required ? "required" : ""} />
-                  <small>PNG, JPG, JPEG, or WEBP under 4 MB</small>
+                  <small>PNG, JPG, JPEG, or WEBP under 12 MB. We optimize it before upload.</small>
                   <div class="upload-preview mini-preview" data-upload-preview="${slotKey}" ${saved ? "" : "hidden"}>
                     ${saved ? `<img src="${saved.dataUrl}" alt="${label} preview" />` : ""}
                   </div>
@@ -462,7 +520,9 @@ const StoreApp = (() => {
       `;
     }).join("");
     qsa("[data-upload-slot]", root).forEach((input) => {
-      input.addEventListener("change", () => handleUploadSlot(input));
+      input.addEventListener("change", () => {
+        handleUploadSlot(input);
+      });
     });
   }
 
@@ -477,35 +537,65 @@ const StoreApp = (() => {
     if (!file) {
       return;
     }
-    if (!["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.type)) {
-      toast("Only PNG, JPG, JPEG, and WEBP images are allowed.", "error");
-      input.value = "";
-      return;
+    if (preview) {
+      preview.hidden = false;
+      preview.innerHTML = "<small>Optimizing photo...</small>";
     }
-    if (file.size > 4 * 1024 * 1024) {
-      toast("Each image must be smaller than 4 MB.", "error");
-      input.value = "";
-      return;
-    }
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      state.uploads[input.dataset.uploadSlot] = {
-        name: file.name,
-        dataUrl: reader.result,
-        label: input.dataset.uploadLabel,
-        itemKey: input.dataset.uploadItem,
-        productId: input.dataset.uploadProduct
-      };
-      if (preview) {
-        preview.hidden = false;
-        preview.innerHTML = `<img src="${reader.result}" alt="${input.dataset.uploadLabel} preview" />`;
-      }
-    });
-    reader.readAsDataURL(file);
+    const task = optimizePhoto(file)
+      .then((optimized) => {
+        state.uploads[input.dataset.uploadSlot] = {
+          name: optimized.name,
+          dataUrl: optimized.dataUrl,
+          label: input.dataset.uploadLabel,
+          itemKey: input.dataset.uploadItem,
+          productId: input.dataset.uploadProduct
+        };
+        if (preview) {
+          preview.hidden = false;
+          preview.innerHTML = `<img src="${optimized.dataUrl}" alt="${input.dataset.uploadLabel} preview" /><small>Optimized</small>`;
+        }
+      })
+      .catch((error) => {
+        delete state.uploads[input.dataset.uploadSlot];
+        input.value = "";
+        if (preview) {
+          preview.hidden = true;
+          preview.innerHTML = "";
+        }
+        toast(error.message, "error");
+      })
+      .finally(() => {
+        delete state.uploadTasks[input.dataset.uploadSlot];
+      });
+    state.uploadTasks[input.dataset.uploadSlot] = task;
   }
 
   function collectUploads() {
     return Object.values(state.uploads).filter((upload) => upload && upload.dataUrl);
+  }
+
+  async function waitForUploads() {
+    const tasks = Object.values(state.uploadTasks);
+    if (tasks.length) {
+      toast("Finishing photo optimization. Please wait...", "success");
+      await Promise.all(tasks);
+    }
+  }
+
+  function validateUploadedPhotos() {
+    const uploads = collectUploads();
+    state.cart.forEach((item) => {
+      const product = productById(item.productId) || item;
+      const requirement = photoRequirement(product, item.options);
+      const key = cartKey(item);
+      const itemUploads = uploads.filter((upload) => upload.itemKey === key);
+      if (itemUploads.length < requirement.min) {
+        throw new Error(item.name + " requires " + requirement.min + " photo" + (requirement.min === 1 ? "." : "s."));
+      }
+      if (itemUploads.length > requirement.max) {
+        throw new Error(item.name + " accepts a maximum of " + requirement.max + " photo" + (requirement.max === 1 ? "." : "s."));
+      }
+    });
   }
 
   function openCart() {
@@ -613,6 +703,7 @@ const StoreApp = (() => {
     if (form) {
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        const submitButton = form.querySelector("button[type='submit']");
         if (!requireLogin("Please login before placing an order.")) {
           return;
         }
@@ -620,6 +711,12 @@ const StoreApp = (() => {
           return;
         }
         try {
+          if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "Placing Order...";
+          }
+          await waitForUploads();
+          validateUploadedPhotos();
           const formData = new FormData(form);
           const payload = {
             customer: {
@@ -657,6 +754,11 @@ const StoreApp = (() => {
           window.location.href = "/confirmation.html?order=" + encodeURIComponent(result.order.id);
         } catch (error) {
           toast(error.message, "error");
+        } finally {
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = "Place Order";
+          }
         }
       });
     }

@@ -15,7 +15,7 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(ROOT, "uploads");
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.HOST || "0.0.0.0";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
-const MAX_BODY_BYTES = 8 * 1024 * 1024;
+const MAX_BODY_BYTES = 32 * 1024 * 1024;
 const PAYMENT_METHODS = ["Pay on Delivery", "UPI after Preview", "Pay at Store"];
 const PAYMENT_STATUSES = ["Pending", "Awaiting Confirmation", "Paid", "Failed", "Refunded", "Cancelled"];
 const ORDER_STATUSES = ["Pending", "Accepted", "Printing", "Shipped", "Delivered", "Cancelled"];
@@ -259,7 +259,9 @@ function readBody(req) {
     req.on("data", (chunk) => {
       size += chunk.length;
       if (size > MAX_BODY_BYTES) {
-        reject(new Error("Request body is too large."));
+        const tooLarge = new Error("Request body is too large.");
+        tooLarge.statusCode = 413;
+        reject(tooLarge);
         req.destroy();
         return;
       }
@@ -274,7 +276,9 @@ function readBody(req) {
       try {
         resolve(JSON.parse(text));
       } catch (bodyError) {
-        reject(new Error("Invalid JSON body."));
+        const invalidJson = new Error("Invalid JSON body.");
+        invalidJson.statusCode = 400;
+        reject(invalidJson);
       }
     });
     req.on("error", reject);
@@ -1708,7 +1712,13 @@ const server = http.createServer(async (req, res) => {
     await serveStatic(req, res, pathname);
   } catch (routeError) {
     if (!res.headersSent) {
-      error(res, 500, "Unexpected server error.", routeError.message);
+      if (routeError.statusCode === 413) {
+        error(res, 413, "Uploaded photos are too large. Please use smaller photos.");
+      } else if (routeError.statusCode === 400) {
+        error(res, 400, routeError.message);
+      } else {
+        error(res, 500, "Unexpected server error.", routeError.message);
+      }
     } else {
       res.end();
     }
