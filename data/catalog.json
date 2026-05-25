@@ -35,7 +35,7 @@
       "badge": "Best seller",
       "turnaround": "1 day preview",
       "images": [
-        "/assets/products/placeholders/cup-photo-printing.svg",
+        "/assets/products/generated/cup-photo-printing-ai.jpg",
         "/assets/products/photo-coaster-set.webp",
         "/assets/products/mini-desk-frame.jpg"
       ],
@@ -112,7 +112,7 @@
       "badge": "Popular gift",
       "turnaround": "Preview before print",
       "images": [
-        "/assets/products/placeholders/love-story-frame.svg",
+        "/assets/products/generated/love-story-frame-ai.jpg",
         "/assets/products/photo-coaster-set.webp",
         "/assets/products/pillow-printing.webp"
       ],
@@ -194,7 +194,7 @@
       "turnaround": "Multiple sizes",
       "images": [
         "/assets/products/pillow-printing.webp",
-        "/assets/products/placeholders/premium-wall-frame.svg",
+        "/assets/products/generated/premium-wall-frame-ai.jpg",
         "/assets/products/photo-coaster-set.webp"
       ],
       "photoRequirements": {
@@ -326,7 +326,7 @@
       "badge": "Home decor",
       "turnaround": "Matte or glossy",
       "images": [
-        "/assets/products/placeholders/premium-wall-frame.svg",
+        "/assets/products/generated/premium-wall-frame-ai.jpg",
         "/assets/products/photo-coaster-set.webp"
       ],
       "photoRequirements": {
@@ -382,7 +382,7 @@
       "badge": "Combo deal",
       "turnaround": "Custom bundle",
       "images": [
-        "/assets/products/placeholders/gift-combo-pack.svg",
+        "/assets/products/generated/gift-combo-pack-ai.jpg",
         "/assets/products/pillow-printing.webp",
         "/assets/products/mini-desk-frame.jpg",
         "/assets/products/photo-coaster-set.webp"
@@ -550,7 +550,7 @@
       "badge": "Premium hamper",
       "turnaround": "Occasion ready",
       "images": [
-        "/assets/products/placeholders/custom-gift-hamper.svg",
+        "/assets/products/generated/custom-gift-hamper-ai.jpg",
         "/assets/products/pillow-printing.webp",
         "/assets/products/mini-desk-frame.jpg",
         "/assets/products/photo-coaster-set.webp"

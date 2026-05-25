@@ -151,6 +151,21 @@ const ProductPage = (() => {
     return options;
   }
 
+  function selectedCustomFields(root, product) {
+    const values = {};
+    (product.customFields || []).forEach((field) => {
+      const input = qs("[data-pdp-custom-field='" + cssEscape(field.id || field.label) + "']", root);
+      const value = input ? input.value.trim() : "";
+      if (field.required && !value) {
+        throw new Error(field.label + " is required.");
+      }
+      if (value) {
+        values[field.label] = value;
+      }
+    });
+    return values;
+  }
+
   function cssEscape(value) {
     return String(value).replace(/'/g, "\\'");
   }
@@ -170,6 +185,24 @@ const ProductPage = (() => {
         </div>
       </div>
     `).join("");
+  }
+
+  function customFieldsMarkup(product) {
+    if (!product.customFields || !product.customFields.length) {
+      return "";
+    }
+    return `
+      <div class="custom-field-list">
+        ${(product.customFields || []).map((field) => `
+          <label>
+            <strong>${field.label}${field.required ? " *" : ""}</strong>
+            ${field.type === "textarea"
+              ? `<textarea rows="3" data-pdp-custom-field="${field.id || field.label}" ${field.required ? "required" : ""}></textarea>`
+              : `<input type="text" data-pdp-custom-field="${field.id || field.label}" ${field.required ? "required" : ""} />`}
+          </label>
+        `).join("")}
+      </div>
+    `;
   }
 
   function specsMarkup(product) {
@@ -271,6 +304,7 @@ const ProductPage = (() => {
             <small>Final total updates as you choose options.</small>
           </div>
           <div class="option-list">${optionMarkup(product)}</div>
+          ${customFieldsMarkup(product)}
           <label class="pdp-quantity">
             <strong>Quantity</strong>
             <input type="number" min="1" max="50" value="1" data-pdp-quantity />
@@ -366,18 +400,27 @@ const ProductPage = (() => {
       if (!requireLogin()) {
         return;
       }
-      const options = selectedOptions(root, state.product);
+      let options;
+      let customFields;
+      try {
+        options = selectedOptions(root, state.product);
+        customFields = selectedCustomFields(root, state.product);
+      } catch (error) {
+        toast(error.message, "error");
+        return;
+      }
       const quantity = Math.max(1, Number(qs("[data-pdp-quantity]", root).value) || 1);
       const item = {
         productId: state.product.id,
         name: state.product.name,
         image: state.product.images[0],
         options,
+        customFields,
         quantity,
         unitPrice: productPrice(state.product, options)
       };
-      const key = item.productId + "::" + JSON.stringify(item.options || {});
-      const existing = state.cart.find((entry) => entry.productId + "::" + JSON.stringify(entry.options || {}) === key);
+      const key = item.productId + "::" + JSON.stringify(item.options || {}) + "::" + JSON.stringify(item.customFields || {});
+      const existing = state.cart.find((entry) => (entry.cartKey || (entry.productId + "::" + JSON.stringify(entry.options || {}) + "::" + JSON.stringify(entry.customFields || {}))) === key);
       if (existing) {
         existing.quantity += item.quantity;
       } else {

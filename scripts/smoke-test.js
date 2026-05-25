@@ -110,6 +110,84 @@ async function main() {
       })
     });
     const cookie = login.response.headers.get("set-cookie").split(";")[0];
+    await expectFailure("/api/admin/products", {}, 401);
+    await request("/owner-products.html", {
+      headers: { Cookie: cookie }
+    });
+    const adminProducts = await request("/api/admin/products", {
+      headers: { Cookie: cookie }
+    });
+    if (!adminProducts.data.products.length) {
+      throw new Error("Owner products API did not return catalog products.");
+    }
+    await expectFailure("/api/admin/products", {
+      method: "POST",
+      headers: { Cookie: cookie },
+        body: JSON.stringify({
+          name: "Broken Product",
+          basePrice: 0,
+          description: "Invalid price should fail."
+        })
+    }, 400);
+    const newProduct = await request("/api/admin/products", {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: JSON.stringify({
+        name: "Smoke Test Table Frame",
+        category: "frames",
+        basePrice: 456,
+        stockStatus: "Available",
+        summary: "Temporary product created by the smoke test.",
+        description: "Temporary product created by the smoke test.",
+        sizes: ["A5", "A4"],
+        colors: ["Black", "White"],
+        options: [
+          {
+            name: "Finish",
+            choices: [
+              { label: "Matte", price: 0 },
+              { label: "Glossy", price: 50 }
+            ]
+          }
+        ],
+        customFields: [
+          { label: "Name on frame", required: true }
+        ],
+        photoMin: 2,
+        photoMax: 3,
+        photoLabels: ["Photo 1", "Photo 2", "Optional Photo 3"],
+        tags: ["smoke"],
+        features: ["Owner editable product"]
+      })
+    });
+    if (!newProduct.data.product.id || newProduct.data.product.photoRequirements.min !== 2 || newProduct.data.product.customFields.length !== 1) {
+      throw new Error("Owner product creation did not save photo/customization requirements.");
+    }
+    const publicProductsAfterCreate = await request("/api/products");
+    if (!publicProductsAfterCreate.data.products.some((product) => product.id === newProduct.data.product.id)) {
+      throw new Error("Owner-created product did not appear on the public product API.");
+    }
+    const updatedProduct = await request("/api/admin/products/" + newProduct.data.product.id, {
+      method: "PUT",
+      headers: { Cookie: cookie },
+      body: JSON.stringify({
+        ...newProduct.data.product,
+        name: "Smoke Test Updated Frame",
+        basePrice: 567,
+        stockStatus: "Available",
+        photoMin: 1,
+        photoMax: 2,
+        photoLabels: ["Main Photo", "Optional Photo"]
+      })
+    });
+    if (updatedProduct.data.product.basePrice !== 567 || updatedProduct.data.product.photoRequirements.max !== 2) {
+      throw new Error("Owner product update did not persist price/photo settings.");
+    }
+    await request("/api/admin/products/" + newProduct.data.product.id, {
+      method: "DELETE",
+      headers: { Cookie: cookie }
+    });
+    await expectFailure("/api/products/" + newProduct.data.product.id, {}, 404);
     const otpRequest = await request("/api/auth/request-otp", {
       method: "POST",
       body: JSON.stringify({
@@ -137,7 +215,6 @@ async function main() {
       "Pillow size": "12x12 inches",
       "Print side": "Both sides"
     };
-    const pillowKey = "pillow-printing::" + JSON.stringify(pillowOptions);
     await request("/api/cart", {
       method: "PUT",
       headers: { Cookie: customerCookie },
@@ -157,6 +234,7 @@ async function main() {
     if (!customerCart.data.cart.items.some((item) => item.productId === "pillow-printing")) {
       throw new Error("Logged-in cart API did not persist the pillow item.");
     }
+    const pillowKey = customerCart.data.cart.items.find((item) => item.productId === "pillow-printing").cartKey;
     const customerOrder = await request("/api/orders", {
       method: "POST",
       headers: { Cookie: customerCookie },

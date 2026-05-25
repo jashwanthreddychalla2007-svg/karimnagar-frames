@@ -19,6 +19,9 @@ const MAX_BODY_BYTES = 8 * 1024 * 1024;
 const PAYMENT_METHODS = ["Pay on Delivery", "UPI after Preview", "Pay at Store"];
 const PAYMENT_STATUSES = ["Pending", "Awaiting Confirmation", "Paid", "Failed", "Refunded", "Cancelled"];
 const ORDER_STATUSES = ["Pending", "Accepted", "Printing", "Shipped", "Delivered", "Cancelled"];
+const PRODUCT_CATALOG_VERSION = "2026-05-25-owner-product-management";
+const PRODUCT_CATEGORIES = ["frames", "cups", "pillows", "combos"];
+const PRODUCT_STATUSES = ["Available", "Out of stock", "Hidden", "Disabled"];
 const OTP_TTL_MS = 1000 * 60 * 10;
 const OTP_MAX_ATTEMPTS = 5;
 
@@ -113,11 +116,20 @@ async function applyCatalog(db) {
   try {
     const text = await fsp.readFile(CATALOG_FILE, "utf8");
     const catalog = JSON.parse(text);
+    db.meta = db.meta || {};
     if (catalog.settings && typeof catalog.settings === "object") {
-      db.settings = { ...(db.settings || {}), ...catalog.settings };
+      db.settings = { ...catalog.settings, ...(db.settings || {}) };
     }
     if (Array.isArray(catalog.products) && catalog.products.length) {
-      db.products = catalog.products;
+      const catalogHash = crypto.createHash("sha256").update(JSON.stringify(catalog.products)).digest("hex");
+      const ownerManagedProducts = Boolean(db.meta.productsManagedAt);
+      if (!Array.isArray(db.products) || !db.products.length || (!ownerManagedProducts && db.meta.productCatalogVersion !== PRODUCT_CATALOG_VERSION)) {
+        db.products = catalog.products.map((product) => normalizeProductRecord(product));
+        db.meta.productCatalogVersion = PRODUCT_CATALOG_VERSION;
+        db.meta.productCatalogHash = catalogHash;
+      } else {
+        db.products = (db.products || []).map((product) => normalizeProductRecord(product));
+      }
     }
   } catch (error) {
     return db;
@@ -319,6 +331,267 @@ function generateOtp() {
   return String(crypto.randomInt(100000, 1000000));
 }
 
+function safeText(value, max = 160) {
+  return String(value || "").replace(/[<>]/g, "").trim().slice(0, max);
+}
+
+function productSlug(value) {
+  const slug = String(value || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "custom-product";
+}
+
+function uniqueProductId(db, value, existingId = "") {
+  const base = productSlug(value);
+  let candidate = base;
+  let suffix = 2;
+  while ((db.products || []).some((product) => product.id === candidate && product.id !== existingId)) {
+    candidate = base + "-" + suffix;
+    suffix += 1;
+  }
+  return candidate;
+}
+
+function splitList(value) {
+  const source = Array.isArray(value) ? value : String(value || "").split(/[\n,]+/);
+  return Array.from(new Set(source.map((item) => safeText(item, 120)).filter(Boolean)));
+}
+
+function normalizeChoice(choice) {
+  if (typeof choice === "string") {
+    return { label: safeText(choice, 80), price: 0 };
+  }
+  return {
+    label: safeText(choice && choice.label, 80),
+    price: Math.max(0, Number(choice && choice.price) || 0)
+  };
+}
+
+function parseOptionsText(value) {
+  return String(value || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const index = line.indexOf(":");
+      if (index === -1) {
+        return null;
+      }
+      const name = safeText(line.slice(0, index), 80);
+      const choices = line.slice(index + 1).split(",").map((part) => {
+        const [label, price] = part.split("=");
+        return {
+          label: safeText(label, 80),
+          price: Math.max(0, Number(price) || 0)
+        };
+      }).filter((choice) => choice.label);
+      return name && choices.length ? { name, choices } : null;
+    })
+    .filter(Boolean);
+}
+
+function normalizeOptionGroups(value) {
+  const source = typeof value === "string" ? parseOptionsText(value) : value;
+  if (!Array.isArray(source)) {
+    return [];
+  }
+  return source.map((group) => {
+    const choices = (group && Array.isArray(group.choices) ? group.choices : [])
+      .map(normalizeChoice)
+      .filter((choice) => choice.label);
+    return {
+      name: safeText(group && group.name, 80),
+      choices
+    };
+  }).filter((group) => group.name && group.choices.length);
+}
+
+function hasOptionGroup(options, pattern) {
+  return options.some((group) => pattern.test(group.name));
+}
+
+function optionsWithSizeAndColor(options, sizes, colors) {
+  const next = [...options];
+  if (sizes.length && !hasOptionGroup(next, /size/i)) {
+    next.unshift({
+      name: "Size",
+      choices: sizes.map((label) => ({ label, price: 0 }))
+    });
+  }
+  if (colors.length && !hasOptionGroup(next, /colo(u)?r/i)) {
+    next.unshift({
+      name: "Color",
+      choices: colors.map((label) => ({ label, price: 0 }))
+    });
+  }
+  return next;
+}
+
+function normalizePhotoRequirements(input, fallback = {}) {
+  const source = input && typeof input === "object" ? input : {};
+  const base = fallback && typeof fallback === "object" ? fallback : {};
+  const min = Math.max(1, Number(source.min ?? source.required ?? base.min ?? base.required ?? 1) || 1);
+  const max = Math.max(min, Number(source.max ?? base.max ?? min) || min);
+  let labels = splitList(source.labels && source.labels.length ? source.labels : base.labels);
+  while (labels.length < max) {
+    labels.push("Photo " + (labels.length + 1));
+  }
+  return {
+    min,
+    max,
+    labels: labels.slice(0, max),
+    rules: Array.isArray(source.rules) ? source.rules : (Array.isArray(base.rules) ? base.rules : [])
+  };
+}
+
+function parseCustomFieldsText(value) {
+  return String(value || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const parts = line.split("|").map((part) => part.trim()).filter(Boolean);
+      return {
+        label: safeText(parts[0], 80),
+        required: parts.slice(1).some((part) => /^required$/i.test(part)),
+        type: "text"
+      };
+    })
+    .filter((field) => field.label);
+}
+
+function normalizeCustomFields(value) {
+  const source = typeof value === "string" ? parseCustomFieldsText(value) : value;
+  if (!Array.isArray(source)) {
+    return [];
+  }
+  return source.map((field) => ({
+    id: productSlug(field.id || field.label),
+    label: safeText(field.label, 80),
+    required: Boolean(field.required),
+    type: ["text", "textarea"].includes(field.type) ? field.type : "text"
+  })).filter((field) => field.label).slice(0, 12);
+}
+
+function normalizeProductImages(value) {
+  const images = Array.isArray(value) ? value : [value];
+  const unique = Array.from(new Set(images.map((image) => safeText(image, 320)).filter(Boolean)));
+  return unique.length ? unique : ["/assets/products/placeholders/product-placeholder.svg"];
+}
+
+function normalizeProductRecord(product = {}, fallback = {}) {
+  const merged = { ...fallback, ...product };
+  const name = safeText(merged.name || "Custom Product", 120);
+  const category = PRODUCT_CATEGORIES.includes(String(merged.category || "").toLowerCase())
+    ? String(merged.category).toLowerCase()
+    : "frames";
+  const rawStatus = safeText(merged.stockStatus || merged.status || "", 40);
+  let stockStatus = PRODUCT_STATUSES.includes(rawStatus) ? rawStatus : "";
+  if (!stockStatus) {
+    stockStatus = merged.available === false ? "Disabled" : "Available";
+  }
+  const available = !["Out of stock", "Hidden", "Disabled"].includes(stockStatus) && merged.available !== false;
+  const sizes = splitList(merged.sizes);
+  const colors = splitList(merged.colors);
+  const options = optionsWithSizeAndColor(normalizeOptionGroups(merged.options), sizes, colors);
+  return {
+    id: safeText(merged.id || productSlug(name), 90),
+    name,
+    category,
+    summary: safeText(merged.summary || merged.description || "Custom photo gift product.", 220),
+    description: safeText(merged.description || merged.summary || "Custom photo gift product.", 1200),
+    basePrice: Math.max(0, Number(merged.basePrice ?? merged.price) || 0),
+    rating: Number(merged.rating) || 4.7,
+    featured: Boolean(merged.featured),
+    badge: safeText(merged.badge || (available ? "Custom gift" : "Unavailable"), 60),
+    turnaround: safeText(merged.turnaround || "Preview before print", 80),
+    images: normalizeProductImages(merged.images || merged.image || merged.imageUrl),
+    sizes,
+    colors,
+    options,
+    customFields: normalizeCustomFields(merged.customFields),
+    photoRequirements: normalizePhotoRequirements(merged.photoRequirements, fallback.photoRequirements),
+    available,
+    stockStatus,
+    status: available ? "active" : "disabled",
+    tags: splitList(merged.tags),
+    features: splitList(merged.features),
+    createdAt: merged.createdAt || now(),
+    updatedAt: merged.updatedAt || now()
+  };
+}
+
+function isProductAvailable(product) {
+  return product && product.available !== false && product.status !== "disabled" && !["Out of stock", "Hidden", "Disabled"].includes(product.stockStatus);
+}
+
+async function saveProductImage(input, name = "product-image") {
+  if (!input) {
+    return "";
+  }
+  const match = String(input).match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/);
+  if (!match) {
+    throw new Error("Product image must be PNG, JPG, JPEG, or WEBP.");
+  }
+  const ext = match[1] === "jpeg" ? "jpg" : match[1];
+  const bytes = Buffer.from(match[2], "base64");
+  if (!bytes.length || bytes.length > 4 * 1024 * 1024) {
+    throw new Error("Product image must be smaller than 4 MB.");
+  }
+  const dir = path.join(UPLOAD_DIR, "products");
+  await fsp.mkdir(dir, { recursive: true });
+  const filename = productSlug(name) + "-" + Date.now() + "-" + crypto.randomBytes(4).toString("hex") + "." + ext;
+  await fsp.writeFile(path.join(dir, filename), bytes);
+  return "/uploads/products/" + filename;
+}
+
+async function productFromAdminInput(db, input, existing = null) {
+  const body = input && typeof input === "object" ? input : {};
+  const name = safeText(body.name || (existing && existing.name), 120);
+  if (!name) {
+    throw new Error("Product name is required.");
+  }
+  if (body.basePrice === "" || body.basePrice === null || body.basePrice === undefined) {
+    throw new Error("Product price is required.");
+  }
+  const basePrice = Number(body.basePrice);
+  if (!Number.isFinite(basePrice) || basePrice <= 0) {
+    throw new Error("Product price must be greater than zero.");
+  }
+  let images = Array.isArray(body.images) ? body.images : (existing && existing.images ? existing.images : []);
+  const imageUrl = safeText(body.imageUrl || body.image, 320);
+  if (imageUrl) {
+    images = [imageUrl, ...images.filter((image) => image !== imageUrl)];
+  }
+  if (body.imageDataUrl) {
+    const uploaded = await saveProductImage(body.imageDataUrl, body.imageName || name);
+    images = [uploaded, ...images.filter((image) => image !== uploaded)];
+  }
+  const photoRequirements = normalizePhotoRequirements({
+    min: body.photoMin ?? body.requiredPhotoCount,
+    max: body.photoMax ?? body.maxPhotoCount,
+    labels: body.photoLabels,
+    rules: body.photoRules
+  }, existing && existing.photoRequirements);
+  const product = normalizeProductRecord({
+    ...existing,
+    ...body,
+    id: existing ? existing.id : uniqueProductId(db, body.id || name),
+    basePrice,
+    images,
+    options: body.optionsText ? parseOptionsText(body.optionsText) : body.options,
+    customFields: body.customFieldsText ? parseCustomFieldsText(body.customFieldsText) : body.customFields,
+    photoRequirements,
+    updatedAt: now(),
+    createdAt: existing && existing.createdAt
+  }, existing || {});
+  product.id = existing ? existing.id : uniqueProductId(db, product.id || name);
+  return product;
+}
+
 async function sendOtpSms(phone, otp) {
   const provider = String(process.env.SMS_PROVIDER || "textbelt").toLowerCase();
   const message = "Your Karimnagar Frames OTP is " + otp + ". It expires in 10 minutes.";
@@ -397,7 +670,22 @@ function productPhotoRequirement(product, selectedOptions = {}) {
 }
 
 function cartKey(item) {
-  return item.productId + "::" + JSON.stringify(item.options || {});
+  return item.productId + "::" + JSON.stringify(item.options || {}) + "::" + JSON.stringify(item.customFields || {});
+}
+
+function normalizeItemCustomFields(product, input) {
+  const values = input && typeof input === "object" ? input : {};
+  const customFields = {};
+  (product.customFields || []).forEach((field) => {
+    const value = safeText(values[field.label] ?? values[field.id], field.type === "textarea" ? 500 : 160);
+    if (field.required && !value) {
+      throw new Error(product.name + " requires " + field.label + ".");
+    }
+    if (value) {
+      customFields[field.label] = value;
+    }
+  });
+  return customFields;
 }
 
 function normalizeCartItems(db, items) {
@@ -409,8 +697,12 @@ function normalizeCartItems(db, items) {
     if (!product) {
       throw new Error("Invalid product in cart.");
     }
+    if (!isProductAvailable(product)) {
+      throw new Error(product.name + " is not available right now.");
+    }
     const quantity = Math.min(50, Math.max(1, Number(item.quantity) || 1));
     const selectedOptions = item.options && typeof item.options === "object" ? item.options : {};
+    const customFields = normalizeItemCustomFields(product, item.customFields);
     const unitPrice = productPrice(product, selectedOptions);
     const normalized = {
       productId: product.id,
@@ -418,7 +710,8 @@ function normalizeCartItems(db, items) {
       image: product.images && product.images[0] ? product.images[0] : "",
       quantity,
       unitPrice,
-      options: selectedOptions
+      options: selectedOptions,
+      customFields
     };
     normalized.cartKey = cartKey(normalized);
     return normalized;
@@ -652,10 +945,91 @@ async function handleApi(req, res, pathname, url) {
     return;
   }
 
+  if (req.method === "GET" && pathname === "/api/admin/products") {
+    const admin = requireAdmin(req, res, db);
+    if (!admin) {
+      return;
+    }
+    json(res, 200, { ok: true, products: (db.products || []).map((product) => normalizeProductRecord(product)) });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/admin/products") {
+    const admin = requireAdmin(req, res, db);
+    if (!admin) {
+      return;
+    }
+    const body = await readBody(req);
+    let product;
+    try {
+      product = await productFromAdminInput(db, body);
+    } catch (productError) {
+      error(res, 400, productError.message);
+      return;
+    }
+    db.products = db.products || [];
+    db.products.unshift(product);
+    db.meta = db.meta || {};
+    db.meta.productsManagedAt = now();
+    await writeDb(db);
+    json(res, 201, { ok: true, product });
+    return;
+  }
+
+  const adminProductMatch = pathname.match(/^\/api\/admin\/products\/([^/]+)$/);
+  if ((req.method === "PUT" || req.method === "PATCH") && adminProductMatch) {
+    const admin = requireAdmin(req, res, db);
+    if (!admin) {
+      return;
+    }
+    const product = (db.products || []).find((entry) => entry.id === adminProductMatch[1]);
+    if (!product) {
+      error(res, 404, "Product not found.");
+      return;
+    }
+    const body = await readBody(req);
+    let updated;
+    try {
+      updated = await productFromAdminInput(db, body, product);
+    } catch (productError) {
+      error(res, 400, productError.message);
+      return;
+    }
+    const index = db.products.findIndex((entry) => entry.id === product.id);
+    db.products[index] = updated;
+    db.meta = db.meta || {};
+    db.meta.productsManagedAt = now();
+    await writeDb(db);
+    json(res, 200, { ok: true, product: updated });
+    return;
+  }
+
+  if (req.method === "DELETE" && adminProductMatch) {
+    const admin = requireAdmin(req, res, db);
+    if (!admin) {
+      return;
+    }
+    const product = (db.products || []).find((entry) => entry.id === adminProductMatch[1]);
+    if (!product) {
+      error(res, 404, "Product not found.");
+      return;
+    }
+    product.available = false;
+    product.stockStatus = "Disabled";
+    product.status = "disabled";
+    product.deletedAt = now();
+    product.updatedAt = now();
+    db.meta = db.meta || {};
+    db.meta.productsManagedAt = now();
+    await writeDb(db);
+    json(res, 200, { ok: true, product: normalizeProductRecord(product) });
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/products") {
     const q = String(url.searchParams.get("q") || "").toLowerCase();
     const category = String(url.searchParams.get("category") || "all");
-    let products = db.products || [];
+    let products = (db.products || []).filter(isProductAvailable);
     if (category && category !== "all") {
       products = products.filter((product) => product.category === category);
     }
@@ -671,7 +1045,7 @@ async function handleApi(req, res, pathname, url) {
   const productMatch = pathname.match(/^\/api\/products\/([^/]+)$/);
   if (req.method === "GET" && productMatch) {
     const product = (db.products || []).find((item) => item.id === productMatch[1]);
-    if (!product) {
+    if (!product || !isProductAvailable(product)) {
       error(res, 404, "Product not found.");
       return;
     }
@@ -1192,11 +1566,38 @@ async function serveStatic(req, res, pathname) {
   if (requestedPath === "/owner-dashboard") {
     requestedPath = "/owner-dashboard.html";
   }
+  if (requestedPath === "/owner-products") {
+    requestedPath = "/owner-products.html";
+  }
   if (requestedPath === "/customer-dashboard") {
     requestedPath = "/customer-dashboard.html";
   }
   if (requestedPath === "/product") {
     requestedPath = "/product.html";
+  }
+  if (requestedPath === "/owner-dashboard.html" || requestedPath === "/owner-products.html") {
+    const db = await readDb();
+    const user = currentUser(req, db);
+    if (!user) {
+      send(res, 302, "Redirecting", { Location: "/auth.html?returnTo=" + encodeURIComponent(requestedPath) });
+      return;
+    }
+    if (user.role !== "admin") {
+      send(res, 302, "Redirecting", { Location: "/customer-dashboard.html" });
+      return;
+    }
+  }
+  if (requestedPath === "/customer-dashboard.html") {
+    const db = await readDb();
+    const user = currentUser(req, db);
+    if (!user) {
+      send(res, 302, "Redirecting", { Location: "/auth.html?returnTo=" + encodeURIComponent(requestedPath) });
+      return;
+    }
+    if (user.role === "admin") {
+      send(res, 302, "Redirecting", { Location: "/owner-dashboard.html" });
+      return;
+    }
   }
   if (requestedPath.startsWith("/uploads/")) {
     const uploadFile = path.resolve(UPLOAD_DIR, "." + requestedPath.replace("/uploads", ""));

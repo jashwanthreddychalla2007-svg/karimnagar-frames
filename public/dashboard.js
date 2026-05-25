@@ -90,7 +90,10 @@ const DashboardApp = (() => {
   }
 
   function orderItemsText(order) {
-    return order.items.map((item) => item.name + " x " + item.quantity).join(", ");
+    return order.items.map((item) => {
+      const customText = Object.entries(item.customFields || {}).map(([key, value]) => key + ": " + value).join(", ");
+      return item.name + " x " + item.quantity + (customText ? " (" + customText + ")" : "");
+    }).join(", ");
   }
 
   function orderUploads(order) {

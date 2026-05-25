@@ -1504,7 +1504,7 @@ dialog::backdrop {
   color: #ffffff;
   background:
     linear-gradient(140deg, rgba(23, 32, 42, 0.88), rgba(23, 32, 42, 0.35)),
-    url("/assets/products/placeholders/love-story-frame.svg") center / cover;
+    url("/assets/products/generated/love-story-frame-ai.jpg") center / cover;
 }
 
 .auth-art .brand small,
@@ -1778,6 +1778,184 @@ th {
   color: var(--muted);
 }
 
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.product-manager-page {
+  width: min(1420px, calc(100% - 32px));
+}
+
+.product-manager-layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.78fr) minmax(520px, 1.22fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.product-list-panel,
+.product-editor-panel {
+  margin-top: 0;
+}
+
+.product-manager-layout .dash-card-head {
+  align-items: flex-start;
+}
+
+.product-manager-layout .dash-card-head h2 {
+  font-size: 1.65rem;
+  line-height: 1.12;
+}
+
+.product-manager-layout .eyebrow,
+.product-manager-layout h2,
+.product-manager-layout h3,
+.product-manager-layout strong,
+.product-manager-layout span {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.compact-search {
+  min-width: 220px;
+}
+
+.owner-product-list {
+  display: grid;
+  gap: 12px;
+  max-height: calc(100vh - 250px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.owner-product-card {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  background: var(--panel);
+  box-shadow: 0 10px 24px rgba(23, 32, 42, 0.07);
+}
+
+.owner-product-card.is-selected {
+  border-color: rgba(37, 99, 235, 0.48);
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.14);
+}
+
+.owner-product-card img {
+  width: 104px;
+  height: 104px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--paper);
+}
+
+.owner-product-head,
+.owner-product-meta,
+.owner-product-actions,
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.owner-product-head {
+  justify-content: space-between;
+}
+
+.owner-product-card p {
+  margin: 6px 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.owner-product-meta span,
+.stock-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.stock-pill.live {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.stock-pill.muted {
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+}
+
+.owner-product-actions {
+  margin-top: 10px;
+}
+
+.product-editor-form {
+  display: grid;
+  gap: 14px;
+}
+
+.custom-field-list {
+  display: grid;
+  gap: 12px;
+}
+
+.custom-field-list textarea,
+.custom-field-list input {
+  margin-top: 8px;
+}
+
+.form-grid.two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.product-image-preview {
+  width: min(100%, 280px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px;
+  background: var(--paper);
+}
+
+.product-image-preview img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--panel);
+}
+
+.check-line {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+}
+
+.check-line input {
+  width: 20px;
+  height: 20px;
+}
+
+.danger-action {
+  color: #b91c1c;
+}
+
 @media (max-width: 980px) {
   .nav-toggle {
     display: inline-flex;
@@ -1809,7 +1987,8 @@ th {
   .pdp-hero,
   .pdp-info-grid,
   .auth-shell,
-  .dashboard-page {
+  .dashboard-page,
+  .product-manager-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1850,6 +2029,10 @@ th {
     position: static;
     height: auto;
   }
+
+  .owner-product-list {
+    max-height: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1881,10 +2064,11 @@ th {
   .dash-grid,
   .pdp-callouts,
   .pdp-options,
-  .rating-summary,
-  .compact-grid,
-  .form-grid,
-  .masonry-gallery {
+    .rating-summary,
+    .compact-grid,
+    .form-grid,
+    .form-grid.two-col,
+    .masonry-gallery {
     grid-template-columns: 1fr;
   }
 
@@ -1900,8 +2084,15 @@ th {
   }
 
   .customer-card-head,
-  .mini-order {
+  .mini-order,
+  .owner-product-card {
     grid-template-columns: 1fr;
+  }
+
+  .owner-product-card img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
   }
 
   .product-modal,

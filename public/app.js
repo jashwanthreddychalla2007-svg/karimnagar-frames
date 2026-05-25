@@ -114,12 +114,27 @@ const StoreApp = (() => {
     return selected;
   }
 
+  function selectedCustomFieldsFrom(root, product) {
+    const values = {};
+    (product.customFields || []).forEach((field) => {
+      const input = qs("[data-custom-field='" + cssEscape(field.id || field.label) + "']", root);
+      const value = input ? input.value.trim() : "";
+      if (field.required && !value) {
+        throw new Error(field.label + " is required.");
+      }
+      if (value) {
+        values[field.label] = value;
+      }
+    });
+    return values;
+  }
+
   function cssEscape(value) {
     return String(value).replace(/'/g, "\\'");
   }
 
   function cartKey(item) {
-    return item.productId + "::" + JSON.stringify(item.options || {});
+    return item.cartKey || (item.productId + "::" + JSON.stringify(item.options || {}) + "::" + JSON.stringify(item.customFields || {}));
   }
 
   function productById(productId) {
@@ -152,7 +167,7 @@ const StoreApp = (() => {
     return requirement;
   }
 
-  async function addToCart(product, options = {}, quantity = 1) {
+  async function addToCart(product, options = {}, quantity = 1, customFields = {}) {
     if (!requireLogin("Please login before adding products to cart.")) {
       return;
     }
@@ -162,6 +177,7 @@ const StoreApp = (() => {
       name: product.name,
       image: product.images[0],
       options,
+      customFields,
       quantity: Math.max(1, Number(quantity) || 1),
       unitPrice
     };
@@ -172,9 +188,13 @@ const StoreApp = (() => {
     } else {
       state.cart.push(next);
     }
-    await saveCart();
-    renderCart();
-    toast(product.name + " added to cart.");
+    try {
+      await saveCart();
+      renderCart();
+      toast(product.name + " added to cart.");
+    } catch (error) {
+      toast(error.message, "error");
+    }
   }
 
   function renderProducts() {
@@ -220,7 +240,13 @@ const StoreApp = (() => {
       (product.options || []).forEach((group) => {
         options[group.name] = group.choices[0].label;
       });
-      button.addEventListener("click", () => addToCart(product, options, 1));
+      button.addEventListener("click", () => {
+        if ((product.customFields || []).some((field) => field.required)) {
+          openProduct(product.id);
+          return;
+        }
+        addToCart(product, options, 1);
+      });
     });
   }
 
@@ -236,6 +262,24 @@ const StoreApp = (() => {
         `).join("")}
       </div>
     `).join("");
+  }
+
+  function customFieldsMarkup(product) {
+    if (!product.customFields || !product.customFields.length) {
+      return "";
+    }
+    return `
+      <div class="custom-field-list">
+        ${(product.customFields || []).map((field) => `
+          <label>
+            <strong>${field.label}${field.required ? " *" : ""}</strong>
+            ${field.type === "textarea"
+              ? `<textarea rows="3" data-custom-field="${field.id || field.label}" ${field.required ? "required" : ""}></textarea>`
+              : `<input type="text" data-custom-field="${field.id || field.label}" ${field.required ? "required" : ""} />`}
+          </label>
+        `).join("")}
+      </div>
+    `;
   }
 
   function openProduct(productId) {
@@ -256,6 +300,7 @@ const StoreApp = (() => {
             ${(product.tags || []).map((tag) => `<span class="detail-chip">${tag}</span>`).join("")}
           </div>
           <div class="option-list">${optionMarkup(product)}</div>
+          ${customFieldsMarkup(product)}
           <label>
             <strong>Quantity</strong>
             <input type="number" min="1" max="50" value="1" data-modal-quantity />
@@ -278,9 +323,17 @@ const StoreApp = (() => {
     qsa("[data-option]", content).forEach((option) => option.addEventListener("change", updateTotal));
     qs("[data-modal-quantity]", content).addEventListener("input", updateTotal);
     qs("[data-modal-add]", content).addEventListener("click", async () => {
-      const options = selectedOptionsFrom(content, product);
+      let options;
+      let customFields;
+      try {
+        options = selectedOptionsFrom(content, product);
+        customFields = selectedCustomFieldsFrom(content, product);
+      } catch (error) {
+        toast(error.message, "error");
+        return;
+      }
       const quantity = Number(qs("[data-modal-quantity]", content).value) || 1;
-      await addToCart(product, options, quantity);
+      await addToCart(product, options, quantity, customFields);
       if (!state.user) {
         return;
       }
@@ -313,10 +366,12 @@ const StoreApp = (() => {
       const line = document.createElement("article");
       line.className = "cart-line";
       const optionText = Object.entries(item.options || {}).map(([key, value]) => key + ": " + value).join(", ");
+      const customText = Object.entries(item.customFields || {}).map(([key, value]) => key + ": " + value).join(", ");
       line.innerHTML = `
         <div>
           <strong>${item.name}</strong>
           <small>${optionText || "Standard options"}</small>
+          ${customText ? `<small>${customText}</small>` : ""}
           <small>${money(item.unitPrice)} each</small>
         </div>
         <div>
@@ -333,7 +388,10 @@ const StoreApp = (() => {
     empty.hidden = state.cart.length > 0;
     total.textContent = money(cartTotal());
     if (summary) {
-      summary.innerHTML = state.cart.length ? state.cart.map((item) => `<p><strong>${item.name}</strong> x ${item.quantity} = ${money(lineTotal(item))}</p>`).join("") + `<strong>Total: ${money(cartTotal())}</strong>` : "<p>Your cart is empty.</p>";
+      summary.innerHTML = state.cart.length ? state.cart.map((item) => {
+        const customText = Object.entries(item.customFields || {}).map(([key, value]) => key + ": " + value).join(", ");
+        return `<p><strong>${item.name}</strong> x ${item.quantity} = ${money(lineTotal(item))}${customText ? `<br><small>${customText}</small>` : ""}</p>`;
+      }).join("") + `<strong>Total: ${money(cartTotal())}</strong>` : "<p>Your cart is empty.</p>";
     }
     renderUploadSlots();
 
@@ -575,6 +633,7 @@ const StoreApp = (() => {
               productId: item.productId,
               quantity: item.quantity,
               options: item.options,
+              customFields: item.customFields,
               cartKey: cartKey(item)
             })),
             uploads: collectUploads(),

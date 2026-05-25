@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Products | Karimnagar Frames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=20260525" />
+  <script defer src="/owner-products.js?v=20260525"></script>
+</head>
+<body class="dashboard-page" data-dashboard-scope="owner-products">
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span class="brand-mark">KF</span>
+      <span>
+        <strong>Karimnagar Frames</strong>
+        <small>Product settings</small>
+      </span>
+    </a>
+    <nav class="side-nav" aria-label="Owner product navigation">
+      <a href="/owner-dashboard.html#overview">Overview</a>
+      <a href="/owner-dashboard.html#orders">All Orders</a>
+      <a href="/owner-dashboard.html#customers">Customers</a>
+      <a href="/owner-products.html">Manage Products</a>
+      <a href="/owner-dashboard.html#settings">Settings</a>
+      <a href="/owner-dashboard.html#profile">Owner Profile</a>
+    </nav>
+    <button class="btn btn-outline" type="button" data-theme-toggle>Toggle Theme</button>
+    <button class="btn" type="button" data-logout>Logout</button>
+  </aside>
+
+  <main class="dashboard-main product-manager-page">
+    <header class="dashboard-top">
+      <div>
+        <p class="eyebrow">Owner dashboard</p>
+        <h1>Manage products</h1>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-soft" type="button" data-new-product>New Product</button>
+        <a class="btn btn-outline" href="/">Back to Store</a>
+      </div>
+    </header>
+
+    <section class="dash-grid product-manager-stats" data-product-stats></section>
+
+    <section class="product-manager-layout">
+      <article class="dash-card product-list-panel">
+        <div class="dash-card-head">
+          <div>
+            <p class="eyebrow">Catalog</p>
+            <h2>Products</h2>
+          </div>
+          <label class="dash-search compact-search">
+            <span>Search</span>
+            <input type="search" placeholder="Name, category, price..." data-product-search />
+          </label>
+        </div>
+        <div class="owner-product-list" data-owner-products>
+          <p>Loading products...</p>
+        </div>
+      </article>
+
+      <article class="dash-card product-editor-panel">
+        <div class="dash-card-head">
+          <div>
+            <p class="eyebrow" data-editor-mode>New product</p>
+            <h2 data-editor-title>Add product</h2>
+          </div>
+          <button class="btn btn-outline" type="button" data-reset-product>Clear</button>
+        </div>
+
+        <form class="product-editor-form" data-product-form>
+          <input type="hidden" name="id" />
+          <div class="form-grid two-col">
+            <label>
+              <span>Product name</span>
+              <input type="text" name="name" required maxlength="120" />
+            </label>
+            <label>
+              <span>Category</span>
+              <select name="category" required>
+                <option value="frames">Frames</option>
+                <option value="cups">Cups</option>
+                <option value="pillows">Pillows</option>
+                <option value="combos">Combos</option>
+              </select>
+            </label>
+            <label>
+              <span>Price</span>
+              <input type="number" name="basePrice" min="1" step="1" required />
+            </label>
+            <label>
+              <span>Stock status</span>
+              <select name="stockStatus">
+                <option value="Available">Available</option>
+                <option value="Out of stock">Out of stock</option>
+                <option value="Hidden">Hidden</option>
+                <option value="Disabled">Disabled</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            <span>Short summary</span>
+            <input type="text" name="summary" maxlength="220" />
+          </label>
+          <label>
+            <span>Description</span>
+            <textarea name="description" rows="4" required></textarea>
+          </label>
+
+          <div class="form-grid two-col">
+            <label>
+              <span>Image URL</span>
+              <input type="url" name="imageUrl" placeholder="/assets/products/generated/example.jpg" />
+            </label>
+            <label>
+              <span>Upload product image</span>
+              <input type="file" name="imageFile" accept="image/png,image/jpeg,image/webp" />
+            </label>
+          </div>
+          <div class="product-image-preview">
+            <img src="/assets/products/placeholders/product-placeholder.svg" alt="Product preview" data-product-image-preview />
+          </div>
+
+          <div class="form-grid two-col">
+            <label>
+              <span>Available sizes</span>
+              <textarea name="sizes" rows="3" placeholder="A4, 12x18, 16x20"></textarea>
+            </label>
+            <label>
+              <span>Available colors</span>
+              <textarea name="colors" rows="3" placeholder="White, Black, Red"></textarea>
+            </label>
+          </div>
+
+          <label>
+            <span>Customization options</span>
+            <textarea name="optionsText" rows="4" placeholder="Frame size: A4=0, 12x18=300&#10;Finish: Matte=0, Glossy=100"></textarea>
+          </label>
+
+          <label>
+            <span>Custom text fields</span>
+            <textarea name="customFieldsText" rows="3" placeholder="Name on frame | required&#10;Gift message&#10;Anniversary date | required"></textarea>
+          </label>
+
+          <div class="form-grid two-col">
+            <label>
+              <span>Required photo count</span>
+              <input type="number" name="photoMin" min="1" max="20" step="1" required />
+            </label>
+            <label>
+              <span>Maximum photo count</span>
+              <input type="number" name="photoMax" min="1" max="20" step="1" required />
+            </label>
+          </div>
+          <label>
+            <span>Photo upload labels</span>
+            <textarea name="photoLabels" rows="3" placeholder="Front Photo&#10;Back Photo&#10;Photo 1"></textarea>
+          </label>
+
+          <div class="form-grid two-col">
+            <label>
+              <span>Features</span>
+              <textarea name="features" rows="3" placeholder="Preview before printing&#10;Premium finish"></textarea>
+            </label>
+            <label>
+              <span>Search tags</span>
+              <textarea name="tags" rows="3" placeholder="birthday, gift, frame"></textarea>
+            </label>
+          </div>
+
+          <div class="form-grid two-col">
+            <label>
+              <span>Badge</span>
+              <input type="text" name="badge" maxlength="60" />
+            </label>
+            <label>
+              <span>Turnaround</span>
+              <input type="text" name="turnaround" maxlength="80" />
+            </label>
+          </div>
+
+          <label class="check-line">
+            <input type="checkbox" name="featured" />
+            <span>Show as featured product</span>
+          </label>
+
+          <div class="form-actions">
+            <button class="btn" type="submit" data-save-product>Save Product</button>
+            <button class="btn btn-outline danger-action" type="button" data-disable-current hidden>Disable Product</button>
+          </div>
+        </form>
+      </article>
+    </section>
+  </main>
+
+  <div class="toast-stack" data-toast-stack aria-live="polite"></div>
+</body>
+</html>
