@@ -208,7 +208,7 @@
           {
             "when": {
               "option": "Print side",
-              "value": "Both sides"
+              "value": "Both sides print"
             },
             "min": 2,
             "max": 2,

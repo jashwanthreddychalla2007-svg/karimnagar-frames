@@ -142,6 +142,20 @@ const StoreApp = (() => {
     return state.products.find((product) => product.id === productId);
   }
 
+  function normalizeOptionValue(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/\bprinting?\b/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function optionValueMatches(selectedValue, ruleValue) {
+    const selected = normalizeOptionValue(selectedValue);
+    const expected = normalizeOptionValue(ruleValue);
+    return Boolean(selected && expected && (selected === expected || selected.includes(expected) || expected.includes(selected)));
+  }
+
   function photoRequirement(product, options = {}) {
     const config = product && product.photoRequirements ? product.photoRequirements : {};
     let requirement = {
@@ -151,7 +165,7 @@ const StoreApp = (() => {
     };
     (config.rules || []).forEach((rule) => {
       const when = rule.when || {};
-      if (when.option && options[when.option] === when.value) {
+      if (when.option && optionValueMatches(options[when.option], when.value)) {
         requirement = {
           min: Number(rule.min) || requirement.min,
           max: Number(rule.max) || requirement.max,
@@ -507,7 +521,7 @@ const StoreApp = (() => {
               return `
                 <label class="upload-box">
                   <span>${label}${required ? " *" : ""}</span>
-                  <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" data-upload-slot="${slotKey}" data-upload-label="${label}" data-upload-item="${key}" data-upload-product="${item.productId}" ${required ? "required" : ""} />
+                  <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" data-upload-slot="${slotKey}" data-upload-label="${label}" data-upload-item="${key}" data-upload-product="${item.productId}" data-upload-required="${required ? "true" : "false"}" aria-required="${required ? "true" : "false"}" />
                   <small>PNG, JPG, JPEG, or WEBP under 12 MB. We optimize it before upload.</small>
                   <div class="upload-preview mini-preview" data-upload-preview="${slotKey}" ${saved ? "" : "hidden"}>
                     ${saved ? `<img src="${saved.dataUrl}" alt="${label} preview" />` : ""}
@@ -590,7 +604,8 @@ const StoreApp = (() => {
       const key = cartKey(item);
       const itemUploads = uploads.filter((upload) => upload.itemKey === key);
       if (itemUploads.length < requirement.min) {
-        throw new Error(item.name + " requires " + requirement.min + " photo" + (requirement.min === 1 ? "." : "s."));
+        const missingLabels = requirement.labels.slice(itemUploads.length, requirement.min).join(", ");
+        throw new Error("Please upload " + requirement.min + " photo" + (requirement.min === 1 ? "" : "s") + " for " + item.name + (missingLabels ? ": " + missingLabels : "") + ".");
       }
       if (itemUploads.length > requirement.max) {
         throw new Error(item.name + " accepts a maximum of " + requirement.max + " photo" + (requirement.max === 1 ? "." : "s."));
@@ -708,6 +723,7 @@ const StoreApp = (() => {
           return;
         }
         if (!form.reportValidity()) {
+          toast("Please complete the required customer details before placing the order.", "error");
           return;
         }
         try {

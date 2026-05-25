@@ -46,7 +46,7 @@ const ProductPage = (() => {
 
   const commonFaqs = [
     ["How do I customize this product?", "Choose options, quantity, and add it to cart. During checkout, add names, dates, quotes, design instructions, and upload a preview photo."],
-    ["Can I upload more than one photo?", "You can upload one preview image during checkout and send extra photos directly on WhatsApp after placing the order."],
+    ["Can I upload more than one photo?", "Yes. Checkout shows the exact photo slots required for each product, including collage frames, coaster sets, gift combos, and double-side pillow printing."],
     ["Will I get a design preview?", "Yes. A preview can be confirmed before final printing for personalized orders."],
     ["Do you support bulk orders?", "Yes. Bulk orders for offices, schools, events, and gifting can be discussed through WhatsApp."],
     ["What is the return policy?", "Damaged or mismatched products can be reported within 3 days of delivery."]

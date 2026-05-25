@@ -864,6 +864,20 @@ function productPrice(product, selectedOptions = {}) {
   return total;
 }
 
+function normalizeOptionValue(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\bprinting?\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function optionValueMatches(selectedValue, ruleValue) {
+  const selected = normalizeOptionValue(selectedValue);
+  const expected = normalizeOptionValue(ruleValue);
+  return Boolean(selected && expected && (selected === expected || selected.includes(expected) || expected.includes(selected)));
+}
+
 function defaultUploadLabels(max) {
   return Array.from({ length: Math.max(1, Number(max) || 1) }, (_, index) => "Photo " + (index + 1));
 }
@@ -877,7 +891,7 @@ function productPhotoRequirement(product, selectedOptions = {}) {
   };
   (config.rules || []).forEach((rule) => {
     const when = rule.when || {};
-    if (when.option && selectedOptions[when.option] === when.value) {
+    if (when.option && optionValueMatches(selectedOptions[when.option], when.value)) {
       requirement = {
         min: Number(rule.min) || requirement.min,
         max: Number(rule.max) || requirement.max,
