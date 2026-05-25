@@ -65,6 +65,12 @@ UPLOAD_DIR=/var/data/uploads
 
 Without a Render disk or another persistent database/storage provider, orders and uploaded photos can be lost when the service restarts or redeploys. The included `render.yaml` is already configured for `/var/data`; make sure the disk is created in Render.
 
+### Render Free Plan Limitation
+
+Render free web services spin down after inactivity. The next visitor can wait around 50 seconds or more while the service wakes up. This is a hosting limitation, not an application code problem. Warm requests on the deployed site usually respond in under 1 second.
+
+For a real shop, use a paid Render web service with a persistent disk or move orders/photos to external storage such as Supabase/PostgreSQL plus Cloudinary/Supabase Storage. This also protects orders and uploaded photos from restart/redeploy data loss.
+
 ## Email OTP and SMS
 
 Customer accounts are created by mobile number, password, and OTP verification.
