@@ -818,8 +818,12 @@ function canShowDemoOtp(delivery) {
   const configuredSmsProvider = process.env.SMS_PROVIDER || "";
   const emailProvider = String(configuredEmailProvider).toLowerCase();
   const smsProvider = String(configuredSmsProvider).toLowerCase();
+  const noEmailProviderConfigured = delivery.channel === "email" && !configuredEmailProvider;
+  const noSmsKeyConfigured = delivery.channel === "sms" && (!configuredSmsProvider || smsProvider === "textbelt") && !process.env.TEXTBELT_KEY;
   return process.env.SHOW_DEMO_OTP === "true" ||
     otpChannel() === "demo" ||
+    noEmailProviderConfigured ||
+    noSmsKeyConfigured ||
     (delivery.channel === "email" && emailProvider === "demo") ||
     (delivery.channel === "sms" && smsProvider === "demo") ||
     delivery.provider === "demo" ||
