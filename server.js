@@ -528,6 +528,52 @@ function isProductAvailable(product) {
   return product && product.available !== false && product.status !== "disabled" && !["Out of stock", "Hidden", "Disabled"].includes(product.stockStatus);
 }
 
+function xmlEscape(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function sitemapDate(value) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+function sitemapUrlEntry(loc, lastmod, priority) {
+  return [
+    "  <url>",
+    "    <loc>" + xmlEscape(loc) + "</loc>",
+    "    <lastmod>" + sitemapDate(lastmod) + "</lastmod>",
+    "    <changefreq>weekly</changefreq>",
+    "    <priority>" + priority.toFixed(1) + "</priority>",
+    "  </url>"
+  ].join("\n");
+}
+
+function buildSitemap(db) {
+  const base = String(db.settings && db.settings.publicUrl || "https://karimnagar-frames.onrender.com").replace(/\/$/, "");
+  const entries = [
+    sitemapUrlEntry(base + "/", db.meta && db.meta.updatedAt, 1.0)
+  ];
+  (db.products || []).filter(isProductAvailable).forEach((product) => {
+    const loc = base + "/product.html?id=" + encodeURIComponent(product.id);
+    entries.push(sitemapUrlEntry(loc, product.updatedAt || (db.meta && db.meta.updatedAt), product.featured ? 0.9 : 0.8));
+  });
+  return [
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+    "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">",
+    entries.join("\n"),
+    "</urlset>",
+    ""
+  ].join("\n");
+}
+
 async function saveProductImage(input, name = "product-image") {
   if (!input) {
     return "";
@@ -1550,6 +1596,15 @@ async function handleApi(req, res, pathname, url) {
 }
 
 async function serveStatic(req, res, pathname) {
+  if (pathname === "/sitemap.xml") {
+    const db = await readDb();
+    send(res, 200, buildSitemap(db), {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Cache-Control": "no-store"
+    });
+    return;
+  }
+
   if (["/karim.html", "/cup.html", "/re1.html", "/pillow.html"].includes(pathname)) {
     const target = pathname === "/karim.html" ? "/" : "/?product=" + encodeURIComponent(pathname.replace("/", "").replace(".html", ""));
     send(res, 302, "Redirecting", { Location: target });

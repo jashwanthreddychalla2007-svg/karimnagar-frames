@@ -89,6 +89,10 @@ async function main() {
   try {
     await waitForServer();
     await request("/api/products");
+    const sitemap = await request("/sitemap.xml");
+    if (!String(sitemap.data.raw || "").includes("product.html?id=cup-photo-printing")) {
+      throw new Error("Dynamic sitemap did not include public product URLs.");
+    }
     await request("/");
     await request("/product.html?id=cup-photo-printing");
     await request("/owner-dashboard.html");
