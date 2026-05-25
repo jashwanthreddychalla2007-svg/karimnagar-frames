@@ -65,20 +65,45 @@ UPLOAD_DIR=/var/data/uploads
 
 Without a Render disk or another persistent database/storage provider, orders and uploaded photos can be lost when the service restarts or redeploys. The included `render.yaml` is already configured for `/var/data`; make sure the disk is created in Render.
 
-## OTP SMS
+## Email OTP and SMS
 
 Customer accounts are created by mobile number, password, and OTP verification.
 
-The app supports Textbelt's free SMS API by default:
+For lower cost production OTPs, use email OTP. Add these Render environment variables:
+
+```text
+OTP_CHANNEL=email
+EMAIL_PROVIDER=resend
+OTP_EMAIL_FROM=Karimnagar Frames <onboarding@resend.dev>
+RESEND_API_KEY=your_resend_api_key
+```
+
+You can also use Brevo instead:
+
+```text
+OTP_CHANNEL=email
+EMAIL_PROVIDER=brevo
+OTP_EMAIL_FROM=otp@your-domain.com
+BREVO_API_KEY=your_brevo_api_key
+```
+
+`OTP_EMAIL_FROM` must be a verified sender/domain in the provider you choose. For local testing without sending real email, use:
+
+```text
+OTP_CHANNEL=demo
+EMAIL_PROVIDER=demo
+```
+
+The app still supports Textbelt SMS as a fallback/testing option:
 
 ```text
 SMS_PROVIDER=textbelt
 TEXTBELT_KEY=textbelt
 ```
 
-Textbelt's free key is only suitable for testing because it has a very small free quota. If the free SMS quota is unavailable, the app shows a demo OTP so testing does not get blocked.
+Textbelt's free key is only suitable for testing because it has a very small free quota. There is no reliable free unlimited SMS provider for production. If OTP delivery is unavailable, the app shows a demo OTP only when the provider fails or demo mode is enabled, so testing does not get blocked.
 
-For production, replace `TEXTBELT_KEY` with a paid SMS key or connect another SMS provider in `server.js`.
+Supabase Auth is a good future option if you want to move authentication and the database fully into Supabase. This project currently keeps its existing order/cart/dashboard logic and adds email OTP delivery without migrating accounts.
 
 ### Option 2: Railway
 

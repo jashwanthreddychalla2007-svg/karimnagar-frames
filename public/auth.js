@@ -109,7 +109,7 @@ const AuthApp = (() => {
         otpForm.elements.challengeId.value = result.challengeId;
         otpForm.elements.otp.value = "";
         otpHelp.textContent = result.message + (result.demoOtp ? " Demo OTP: " + result.demoOtp : "");
-        toast(result.otpSent ? "OTP sent to your mobile." : "Use the demo OTP shown.");
+        toast(result.otpSent ? "OTP sent." : "Use the demo OTP shown.");
         otpForm.elements.otp.focus();
       } catch (error) {
         toast(error.message, "error");
@@ -123,7 +123,7 @@ const AuthApp = (() => {
           method: "POST",
           body: JSON.stringify(formValues(otpForm))
         });
-        toast("Mobile verified. Account created.");
+        toast("Account verified. Account created.");
         window.location.href = returnToPath(result.user);
       } catch (error) {
         toast(error.message, "error");
@@ -145,7 +145,7 @@ const AuthApp = (() => {
           resetForm.elements.otp.value = "";
           resetForm.dataset.password = payload.password;
           resetHelp.textContent = result.message + (result.demoOtp ? " Demo OTP: " + result.demoOtp : "");
-          toast(result.otpSent ? "OTP sent to your mobile." : "Use the demo OTP shown.");
+          toast(result.otpSent ? "OTP sent." : "Use the demo OTP shown.");
           resetForm.elements.otp.focus();
         } catch (error) {
           toast(error.message, "error");

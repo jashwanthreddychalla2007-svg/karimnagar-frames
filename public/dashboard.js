@@ -281,7 +281,7 @@ const DashboardApp = (() => {
         <div class="customer-card-head">
           <div>
             <strong>${customer.name}</strong>
-            <span>${customer.phone} ${customer.phoneVerified ? "- verified" : "- not verified"}</span>
+            <span>${customer.phone} ${customer.emailVerified ? "- email verified" : customer.phoneVerified ? "- mobile verified" : "- not verified"}</span>
           </div>
           <div>
             <strong>${customer.orderCount}</strong>

@@ -22,7 +22,7 @@
         </span>
       </a>
       <h1>Track orders, save details, and manage custom gifts.</h1>
-      <p>Login with your mobile number and password. New customer accounts are protected with OTP verification.</p>
+      <p>Login with your mobile number and password. New customer accounts are protected with email OTP verification.</p>
       <div class="auth-card-preview">
         <span>Preview</span>
         <strong>Love Story Frame</strong>
@@ -68,8 +68,8 @@
           <input type="tel" name="phone" placeholder="Mobile number" required />
         </label>
         <label>
-          <span>Email optional</span>
-          <input type="email" name="email" placeholder="you@example.com" />
+          <span>Email for OTP</span>
+          <input type="email" name="email" placeholder="you@example.com" required />
         </label>
         <label>
           <span>Password</span>
@@ -80,9 +80,9 @@
 
       <form data-otp-form class="auth-form otp-panel" hidden>
         <div class="form-heading">
-          <p class="eyebrow">Verify mobile</p>
+          <p class="eyebrow">Verify account</p>
           <h2>Enter OTP</h2>
-          <p class="auth-note" data-otp-help>We sent a 6 digit OTP to your mobile number.</p>
+          <p class="auth-note" data-otp-help>We sent a 6 digit OTP to your email.</p>
         </div>
         <input type="hidden" name="challengeId" />
         <label>
@@ -96,11 +96,11 @@
         <div class="form-heading">
           <p class="eyebrow">Reset password</p>
           <h2>Forgot Password</h2>
-          <p class="auth-note">Enter your registered mobile number and choose a new password. We will verify it with OTP.</p>
+          <p class="auth-note">Enter your registered mobile number or email and choose a new password. We will verify it with OTP.</p>
         </div>
         <label>
-          <span>Registered mobile number</span>
-          <input type="tel" name="phone" placeholder="Mobile number" required />
+          <span>Registered mobile or email</span>
+          <input type="text" name="identifier" placeholder="Mobile number or email" required />
         </label>
         <label>
           <span>New password</span>
@@ -113,7 +113,7 @@
         <div class="form-heading">
           <p class="eyebrow">Verify reset OTP</p>
           <h2>Reset Password</h2>
-          <p class="auth-note" data-reset-help>We sent a 6 digit OTP to your mobile number.</p>
+          <p class="auth-note" data-reset-help>We sent a 6 digit OTP to your registered email or mobile.</p>
         </div>
         <input type="hidden" name="challengeId" />
         <label>

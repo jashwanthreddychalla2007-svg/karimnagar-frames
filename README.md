@@ -11,7 +11,7 @@ A complete custom gifts storefront for frames, printed cups, pillows, and gift c
 - Product-wise photo upload requirements with multiple labeled image slots
 - Payment method selection
 - Mobile number + password login
-- OTP account creation with free Textbelt SMS support and demo fallback
+- Email OTP account creation and password reset, with SMS/demo fallback options
 - WhatsApp order redirect to the configured owner number
 - Owner dashboard for all orders, messages, statuses, and payment updates
 - Customer dashboard for personal order tracking

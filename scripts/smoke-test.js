@@ -73,6 +73,8 @@ async function main() {
       PORT: String(port),
       DB_FILE: tempDb,
       UPLOAD_DIR: tempUploads,
+      OTP_CHANNEL: "email",
+      EMAIL_PROVIDER: "demo",
       SMS_PROVIDER: "demo"
     },
     stdio: ["ignore", "pipe", "pipe"]
@@ -210,6 +212,9 @@ async function main() {
     if (!otpRequest.data.challengeId || !otpRequest.data.demoOtp) {
       throw new Error("OTP request did not return a demo OTP in test mode.");
     }
+    if (otpRequest.data.otpChannel !== "email") {
+      throw new Error("OTP registration did not use email delivery in test mode.");
+    }
     const otpVerify = await request("/api/auth/verify-otp", {
       method: "POST",
       body: JSON.stringify({
@@ -217,8 +222,8 @@ async function main() {
         otp: otpRequest.data.demoOtp
       })
     });
-    if (!otpVerify.data.user.phoneVerified || otpVerify.data.user.phone !== "9123456780") {
-      throw new Error("OTP registration did not create a verified phone account.");
+    if (!otpVerify.data.user.emailVerified || otpVerify.data.user.phone !== "9123456780") {
+      throw new Error("OTP registration did not create an email verified customer account.");
     }
     let customerCookie = otpVerify.response.headers.get("set-cookie").split(";")[0];
     await request("/api/auth/logout", {
@@ -235,6 +240,9 @@ async function main() {
     });
     if (!resetRequest.data.challengeId || !resetRequest.data.demoOtp) {
       throw new Error("Password reset did not return a demo OTP in test mode.");
+    }
+    if (resetRequest.data.otpChannel !== "email") {
+      throw new Error("Password reset did not use email delivery in test mode.");
     }
     const resetVerify = await request("/api/auth/reset-password", {
       method: "POST",

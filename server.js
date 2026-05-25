@@ -698,6 +698,151 @@ async function sendOtpSms(phone, otp) {
   return { sent: false, provider, reason: "Unknown SMS provider." };
 }
 
+function otpEmailHtml(otp, purpose) {
+  const title = purpose === "reset-password" ? "Reset your password" : "Verify your account";
+  return [
+    "<div style=\"font-family:Arial,sans-serif;line-height:1.6;color:#17202a\">",
+    "<h2 style=\"margin:0 0 12px\">Karimnagar Frames</h2>",
+    "<p>" + title + " with this OTP:</p>",
+    "<p style=\"font-size:28px;font-weight:800;letter-spacing:4px;margin:18px 0\">" + otp + "</p>",
+    "<p>This OTP expires in 10 minutes. Do not share it with anyone.</p>",
+    "</div>"
+  ].join("");
+}
+
+function emailSenderParts(from) {
+  const value = String(from || "").trim();
+  const match = value.match(/^(.+?)\s*<([^>]+)>$/);
+  if (match) {
+    return {
+      name: match[1].replace(/^"|"$/g, "").trim() || "Karimnagar Frames",
+      email: match[2].trim()
+    };
+  }
+  return {
+    name: "Karimnagar Frames",
+    email: value
+  };
+}
+
+async function sendOtpEmail(email, otp, purpose = "register") {
+  const to = normalizeEmail(email);
+  if (!validEmail(to)) {
+    return { sent: false, provider: "email", reason: "Valid email is required." };
+  }
+  const provider = String(process.env.EMAIL_PROVIDER || process.env.OTP_EMAIL_PROVIDER || "demo").toLowerCase();
+  const from = String(process.env.OTP_EMAIL_FROM || process.env.EMAIL_FROM || "").trim();
+  const subject = purpose === "reset-password" ? "Karimnagar Frames password reset OTP" : "Karimnagar Frames account OTP";
+  const text = "Your Karimnagar Frames OTP is " + otp + ". It expires in 10 minutes.";
+
+  if (provider === "demo") {
+    return { sent: false, provider: "email-demo", reason: "Email provider is not configured." };
+  }
+  if (!from) {
+    return { sent: false, provider, reason: "OTP_EMAIL_FROM is not configured." };
+  }
+  if (provider === "resend") {
+    if (!process.env.RESEND_API_KEY) {
+      return { sent: false, provider: "resend", reason: "RESEND_API_KEY is not configured." };
+    }
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + process.env.RESEND_API_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          from,
+          to: [to],
+          subject,
+          text,
+          html: otpEmailHtml(otp, purpose)
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      return {
+        sent: response.ok,
+        provider: "resend",
+        reason: response.ok ? "" : (result.message || result.error || "Resend email failed.")
+      };
+    } catch (emailError) {
+      return { sent: false, provider: "resend", reason: "Email service unavailable." };
+    }
+  }
+  if (provider === "brevo") {
+    if (!process.env.BREVO_API_KEY) {
+      return { sent: false, provider: "brevo", reason: "BREVO_API_KEY is not configured." };
+    }
+    try {
+      const sender = emailSenderParts(from);
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          sender,
+          to: [{ email: to }],
+          subject,
+          textContent: text,
+          htmlContent: otpEmailHtml(otp, purpose)
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      return {
+        sent: response.ok,
+        provider: "brevo",
+        reason: response.ok ? "" : (result.message || "Brevo email failed.")
+      };
+    } catch (emailError) {
+      return { sent: false, provider: "brevo", reason: "Email service unavailable." };
+    }
+  }
+  return { sent: false, provider, reason: "Unknown email provider." };
+}
+
+function emailOtpConfigured() {
+  const provider = String(process.env.EMAIL_PROVIDER || process.env.OTP_EMAIL_PROVIDER || "demo").toLowerCase();
+  return provider === "resend" || provider === "brevo";
+}
+
+function otpChannel() {
+  const channel = String(process.env.OTP_CHANNEL || "auto").toLowerCase();
+  return ["auto", "email", "sms", "demo"].includes(channel) ? channel : "auto";
+}
+
+function canShowDemoOtp(delivery) {
+  const configuredEmailProvider = process.env.EMAIL_PROVIDER || process.env.OTP_EMAIL_PROVIDER || "";
+  const configuredSmsProvider = process.env.SMS_PROVIDER || "";
+  const emailProvider = String(configuredEmailProvider).toLowerCase();
+  const smsProvider = String(configuredSmsProvider).toLowerCase();
+  return process.env.SHOW_DEMO_OTP === "true" ||
+    otpChannel() === "demo" ||
+    (delivery.channel === "email" && emailProvider === "demo") ||
+    (delivery.channel === "sms" && smsProvider === "demo") ||
+    delivery.provider === "demo" ||
+    delivery.provider === "email-demo";
+}
+
+async function sendOtp(challenge, otp) {
+  const channel = otpChannel();
+  if (channel === "demo") {
+    return { sent: false, provider: "demo", channel: "demo", reason: "Demo OTP mode" };
+  }
+  const canEmail = validEmail(challenge.email);
+  if (channel === "email" && !canEmail) {
+    return { sent: false, provider: "email", channel: "email", reason: "Email is required for OTP." };
+  }
+  if ((channel === "email" || channel === "auto") && canEmail && (emailOtpConfigured() || channel === "email")) {
+    const email = await sendOtpEmail(challenge.email, otp, challenge.purpose);
+    return { ...email, channel: "email" };
+  }
+  const sms = await sendOtpSms(challenge.phone, otp);
+  return { ...sms, channel: "sms" };
+}
+
 function productPrice(product, selectedOptions = {}) {
   let total = Number(product.basePrice) || 0;
   (product.options || []).forEach((group) => {
@@ -1152,6 +1297,10 @@ async function handleApi(req, res, pathname, url) {
       return;
     }
     const email = normalizeEmail(body.email);
+    if (otpChannel() === "email" && !email) {
+      error(res, 400, "Email is required because OTP verification is sent by email.");
+      return;
+    }
     if (email && !validEmail(email)) {
       error(res, 400, "Please enter a valid email address.");
       return;
@@ -1187,21 +1336,29 @@ async function handleApi(req, res, pathname, url) {
       phoneKey: mobileKey,
       passwordHash: hashPassword(String(body.password)),
       otpHash: hashPassword(otp),
+      otpChannel: "",
       attempts: 0,
       createdAt: now(),
       expiresAt: new Date(Date.now() + OTP_TTL_MS).toISOString()
     };
+    const delivery = await sendOtp(challenge, otp);
+    challenge.otpChannel = delivery.channel;
+    const demoAllowed = canShowDemoOtp(delivery);
+    if (!delivery.sent && !demoAllowed) {
+      error(res, 502, "OTP could not be sent right now. Please try again later or contact the owner.");
+      return;
+    }
     db.otpChallenges = (db.otpChallenges || []).filter((item) => item.phoneKey !== mobileKey);
     db.otpChallenges.push(challenge);
-    const sms = await sendOtpSms(challenge.phone, otp);
     await writeDb(db);
-    const demoAllowed = !sms.sent || process.env.SHOW_DEMO_OTP === "true";
     json(res, 200, {
       ok: true,
       challengeId: challenge.id,
-      otpSent: sms.sent,
-      smsProvider: sms.provider,
-      message: sms.sent ? "OTP sent to your mobile number." : "Free SMS was not available, so use the demo OTP shown here.",
+      otpSent: delivery.sent,
+      otpChannel: delivery.channel,
+      otpProvider: delivery.provider,
+      smsProvider: delivery.provider,
+      message: delivery.sent ? (delivery.channel === "email" ? "OTP sent to your email address." : "OTP sent to your mobile number.") : "OTP delivery is in demo mode, so use the demo OTP shown here.",
       demoOtp: demoAllowed ? otp : undefined
     });
     return;
@@ -1243,7 +1400,9 @@ async function handleApi(req, res, pathname, url) {
       name: challenge.name,
       email: challenge.email,
       phone: challenge.phone,
-      phoneVerified: true,
+      emailVerified: challenge.otpChannel === "email",
+      phoneVerified: challenge.otpChannel !== "email",
+      verificationChannel: challenge.otpChannel || "sms",
       role: "customer",
       passwordHash: challenge.passwordHash,
       createdAt: now(),
@@ -1260,39 +1419,61 @@ async function handleApi(req, res, pathname, url) {
 
   if (req.method === "POST" && pathname === "/api/auth/request-password-reset") {
     const body = await readBody(req);
-    if (!validPhone(body.phone)) {
-      error(res, 400, "Please enter a valid mobile number.");
+    const identifier = String(body.identifier || body.phone || body.email || "").trim();
+    const resetPhoneKey = phoneKey(identifier);
+    const resetEmail = normalizeEmail(identifier);
+    if (!identifier) {
+      error(res, 400, "Please enter your registered mobile number or email address.");
       return;
     }
-    const mobileKey = phoneKey(body.phone);
-    const user = (db.users || []).find((entry) => phoneKey(entry.phone) === mobileKey);
+    if (!validPhone(identifier) && !validEmail(resetEmail)) {
+      error(res, 400, "Please enter a valid mobile number or email address.");
+      return;
+    }
+    const user = (db.users || []).find((entry) => {
+      return phoneKey(entry.phone) === resetPhoneKey || normalizeEmail(entry.email) === resetEmail;
+    });
     if (!user || user.role === "admin") {
-      error(res, 404, "No customer account was found with this mobile number.");
+      error(res, 404, "No customer account was found with this mobile number or email.");
+      return;
+    }
+    if (otpChannel() === "email" && !validEmail(user.email)) {
+      error(res, 400, "This account has no email address for email OTP reset. Please contact the owner.");
       return;
     }
     const otp = generateOtp();
+    const mobileKey = phoneKey(user.phone);
     const challenge = {
       id: id("otp"),
       purpose: "reset-password",
       userId: user.id,
+      email: normalizeEmail(user.email),
       phone: user.phone,
       phoneKey: mobileKey,
       otpHash: hashPassword(otp),
+      otpChannel: "",
       attempts: 0,
       createdAt: now(),
       expiresAt: new Date(Date.now() + OTP_TTL_MS).toISOString()
     };
+    const delivery = await sendOtp(challenge, otp);
+    challenge.otpChannel = delivery.channel;
+    const demoAllowed = canShowDemoOtp(delivery);
+    if (!delivery.sent && !demoAllowed) {
+      error(res, 502, "OTP could not be sent right now. Please try again later or contact the owner.");
+      return;
+    }
     db.otpChallenges = (db.otpChallenges || []).filter((item) => !(item.purpose === "reset-password" && item.phoneKey === mobileKey));
     db.otpChallenges.push(challenge);
-    const sms = await sendOtpSms(challenge.phone, otp);
     await writeDb(db);
-    const demoAllowed = !sms.sent || process.env.SHOW_DEMO_OTP === "true";
     json(res, 200, {
       ok: true,
       challengeId: challenge.id,
-      otpSent: sms.sent,
-      smsProvider: sms.provider,
-      message: sms.sent ? "Password reset OTP sent to your mobile number." : "Free SMS was not available, so use the demo OTP shown here.",
+      otpSent: delivery.sent,
+      otpChannel: delivery.channel,
+      otpProvider: delivery.provider,
+      smsProvider: delivery.provider,
+      message: delivery.sent ? (delivery.channel === "email" ? "Password reset OTP sent to your email address." : "Password reset OTP sent to your mobile number.") : "OTP delivery is in demo mode, so use the demo OTP shown here.",
       demoOtp: demoAllowed ? otp : undefined
     });
     return;
@@ -1335,7 +1516,12 @@ async function handleApi(req, res, pathname, url) {
       return;
     }
     user.passwordHash = hashPassword(String(body.password));
-    user.phoneVerified = true;
+    if (challenge.otpChannel === "email") {
+      user.emailVerified = true;
+    } else {
+      user.phoneVerified = true;
+    }
+    user.verificationChannel = challenge.otpChannel || user.verificationChannel || "sms";
     user.updatedAt = now();
     db.otpChallenges = (db.otpChallenges || []).filter((item) => item.id !== challenge.id);
     const token = createSession(db, user);
@@ -1662,7 +1848,9 @@ async function handleApi(req, res, pathname, url) {
         username: user.username || "",
         email: user.email || "",
         phone: user.phone || "",
+        emailVerified: Boolean(user.emailVerified),
         phoneVerified: Boolean(user.phoneVerified),
+        verificationChannel: user.verificationChannel || "",
         address: user.address || "",
         createdAt: user.createdAt,
         orderCount: userOrders.length,
