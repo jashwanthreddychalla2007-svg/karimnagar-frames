@@ -105,6 +105,8 @@ Textbelt's free key is only suitable for testing because it has a very small fre
 
 Supabase Auth is a good future option if you want to move authentication and the database fully into Supabase. This project currently keeps its existing order/cart/dashboard logic and adds email OTP delivery without migrating accounts.
 
+The included `render.yaml` already sets `OTP_CHANNEL=email`, `EMAIL_PROVIDER=resend`, and `OTP_EMAIL_FROM`. Add the secret `RESEND_API_KEY` in Render after creating a Resend API key. Until that secret is configured, OTP falls back to demo mode so customer registration is not blocked.
+
 ### Option 2: Railway
 
 Good low-cost option for a Node app.

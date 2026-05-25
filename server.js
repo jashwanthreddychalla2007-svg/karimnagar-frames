@@ -819,10 +819,14 @@ function canShowDemoOtp(delivery) {
   const emailProvider = String(configuredEmailProvider).toLowerCase();
   const smsProvider = String(configuredSmsProvider).toLowerCase();
   const noEmailProviderConfigured = delivery.channel === "email" && !configuredEmailProvider;
+  const noResendKeyConfigured = delivery.channel === "email" && emailProvider === "resend" && !process.env.RESEND_API_KEY;
+  const noBrevoKeyConfigured = delivery.channel === "email" && emailProvider === "brevo" && !process.env.BREVO_API_KEY;
   const noSmsKeyConfigured = delivery.channel === "sms" && (!configuredSmsProvider || smsProvider === "textbelt") && !process.env.TEXTBELT_KEY;
   return process.env.SHOW_DEMO_OTP === "true" ||
     otpChannel() === "demo" ||
     noEmailProviderConfigured ||
+    noResendKeyConfigured ||
+    noBrevoKeyConfigured ||
     noSmsKeyConfigured ||
     (delivery.channel === "email" && emailProvider === "demo") ||
     (delivery.channel === "sms" && smsProvider === "demo") ||

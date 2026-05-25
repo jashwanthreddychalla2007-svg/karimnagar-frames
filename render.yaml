@@ -14,6 +14,14 @@ services:
         value: /var/data/db.json
       - key: UPLOAD_DIR
         value: /var/data/uploads
+      - key: OTP_CHANNEL
+        value: email
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: OTP_EMAIL_FROM
+        value: Karimnagar Frames <onboarding@resend.dev>
+      - key: RESEND_API_KEY
+        sync: false
     disk:
       name: karimnagar-frames-data
       mountPath: /var/data
