@@ -34,6 +34,7 @@
       <div class="tabs" role="tablist">
         <button class="is-active" type="button" data-auth-tab="login">Login</button>
         <button type="button" data-auth-tab="register">Register</button>
+        <button type="button" data-auth-tab="forgot">Forgot Password</button>
       </div>
 
       <form data-login-form class="auth-form">
@@ -50,6 +51,7 @@
           <input type="password" name="password" placeholder="Password" required />
         </label>
         <button class="btn" type="submit">Login</button>
+        <button class="link-button" type="button" data-auth-tab="forgot">Forgot password?</button>
       </form>
 
       <form data-register-form class="auth-form" hidden>
@@ -88,6 +90,37 @@
           <input type="text" name="otp" inputmode="numeric" maxlength="6" placeholder="123456" required />
         </label>
         <button class="btn" type="submit">Verify & Create Account</button>
+      </form>
+
+      <form data-forgot-form class="auth-form" hidden>
+        <div class="form-heading">
+          <p class="eyebrow">Reset password</p>
+          <h2>Forgot Password</h2>
+          <p class="auth-note">Enter your registered mobile number and choose a new password. We will verify it with OTP.</p>
+        </div>
+        <label>
+          <span>Registered mobile number</span>
+          <input type="tel" name="phone" placeholder="Mobile number" required />
+        </label>
+        <label>
+          <span>New password</span>
+          <input type="password" name="password" minlength="8" placeholder="Minimum 8 characters" required />
+        </label>
+        <button class="btn" type="submit">Send Reset OTP</button>
+      </form>
+
+      <form data-reset-form class="auth-form otp-panel" hidden>
+        <div class="form-heading">
+          <p class="eyebrow">Verify reset OTP</p>
+          <h2>Reset Password</h2>
+          <p class="auth-note" data-reset-help>We sent a 6 digit OTP to your mobile number.</p>
+        </div>
+        <input type="hidden" name="challengeId" />
+        <label>
+          <span>OTP code</span>
+          <input type="text" name="otp" inputmode="numeric" maxlength="6" placeholder="123456" required />
+        </label>
+        <button class="btn" type="submit">Verify & Reset Password</button>
       </form>
 
       <a class="back-link" href="/">Back to store</a>

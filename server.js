@@ -134,6 +134,7 @@ async function applyCatalog(db) {
   } catch (error) {
     return db;
   }
+  pruneDemoCustomer(db);
   return db;
 }
 
@@ -143,6 +144,26 @@ async function writeDb(db) {
   const tmp = DATA_FILE + ".tmp";
   await fsp.writeFile(tmp, JSON.stringify(db, null, 2));
   await fsp.rename(tmp, DATA_FILE);
+}
+
+function pruneDemoCustomer(db) {
+  const demoIds = new Set(["usr_customer"]);
+  const demoPhones = new Set(["9876543210"]);
+  const demoEmails = new Set(["customer@karimnagarframes.local"]);
+  const orders = db.orders || [];
+  const users = db.users || [];
+  const before = users.length;
+  db.users = users.filter((user) => {
+    const isDemo = demoIds.has(user.id) || demoPhones.has(phoneKey(user.phone)) || demoEmails.has(normalizeEmail(user.email));
+    const hasOrders = orders.some((order) => order.userId === user.id || phoneKey(order.customer && order.customer.phone) === phoneKey(user.phone));
+    return !(isDemo && !hasOrders);
+  });
+  if (db.users.length !== before) {
+    db.sessions = (db.sessions || []).filter((session) => db.users.some((user) => user.id === session.userId));
+    db.carts = (db.carts || []).filter((cart) => db.users.some((user) => user.id === cart.userId));
+    db.meta = db.meta || {};
+    db.meta.demoCustomerRemovedAt = db.meta.demoCustomerRemovedAt || now();
+  }
 }
 
 function publicUser(user) {
@@ -1189,7 +1210,7 @@ async function handleApi(req, res, pathname, url) {
   if (req.method === "POST" && pathname === "/api/auth/verify-otp") {
     const body = await readBody(req);
     const challenge = (db.otpChallenges || []).find((item) => item.id === body.challengeId);
-    if (!challenge) {
+    if (!challenge || challenge.purpose !== "register") {
       error(res, 400, "OTP session expired. Please request a new OTP.");
       return;
     }
@@ -1234,6 +1255,93 @@ async function handleApi(req, res, pathname, url) {
     await writeDb(db);
     setSessionCookie(res, token);
     json(res, 201, { ok: true, user: publicUser(user) });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/request-password-reset") {
+    const body = await readBody(req);
+    if (!validPhone(body.phone)) {
+      error(res, 400, "Please enter a valid mobile number.");
+      return;
+    }
+    const mobileKey = phoneKey(body.phone);
+    const user = (db.users || []).find((entry) => phoneKey(entry.phone) === mobileKey);
+    if (!user || user.role === "admin") {
+      error(res, 404, "No customer account was found with this mobile number.");
+      return;
+    }
+    const otp = generateOtp();
+    const challenge = {
+      id: id("otp"),
+      purpose: "reset-password",
+      userId: user.id,
+      phone: user.phone,
+      phoneKey: mobileKey,
+      otpHash: hashPassword(otp),
+      attempts: 0,
+      createdAt: now(),
+      expiresAt: new Date(Date.now() + OTP_TTL_MS).toISOString()
+    };
+    db.otpChallenges = (db.otpChallenges || []).filter((item) => !(item.purpose === "reset-password" && item.phoneKey === mobileKey));
+    db.otpChallenges.push(challenge);
+    const sms = await sendOtpSms(challenge.phone, otp);
+    await writeDb(db);
+    const demoAllowed = !sms.sent || process.env.SHOW_DEMO_OTP === "true";
+    json(res, 200, {
+      ok: true,
+      challengeId: challenge.id,
+      otpSent: sms.sent,
+      smsProvider: sms.provider,
+      message: sms.sent ? "Password reset OTP sent to your mobile number." : "Free SMS was not available, so use the demo OTP shown here.",
+      demoOtp: demoAllowed ? otp : undefined
+    });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/reset-password") {
+    const body = await readBody(req);
+    const challenge = (db.otpChallenges || []).find((item) => item.id === body.challengeId);
+    if (!challenge || challenge.purpose !== "reset-password") {
+      error(res, 400, "OTP session expired. Please request a new password reset OTP.");
+      return;
+    }
+    if (new Date(challenge.expiresAt).getTime() <= Date.now()) {
+      db.otpChallenges = (db.otpChallenges || []).filter((item) => item.id !== challenge.id);
+      await writeDb(db);
+      error(res, 400, "OTP expired. Please request a new password reset OTP.");
+      return;
+    }
+    if (challenge.attempts >= OTP_MAX_ATTEMPTS) {
+      db.otpChallenges = (db.otpChallenges || []).filter((item) => item.id !== challenge.id);
+      await writeDb(db);
+      error(res, 429, "Too many OTP attempts. Please request a new password reset OTP.");
+      return;
+    }
+    if (!verifyPassword(String(body.otp || ""), challenge.otpHash)) {
+      challenge.attempts += 1;
+      await writeDb(db);
+      error(res, 400, "Invalid OTP.");
+      return;
+    }
+    if (String(body.password || "").length < 8) {
+      error(res, 400, "Password must be at least 8 characters.");
+      return;
+    }
+    const user = (db.users || []).find((entry) => entry.id === challenge.userId);
+    if (!user || phoneKey(user.phone) !== challenge.phoneKey) {
+      db.otpChallenges = (db.otpChallenges || []).filter((item) => item.id !== challenge.id);
+      await writeDb(db);
+      error(res, 404, "Customer account was not found.");
+      return;
+    }
+    user.passwordHash = hashPassword(String(body.password));
+    user.phoneVerified = true;
+    user.updatedAt = now();
+    db.otpChallenges = (db.otpChallenges || []).filter((item) => item.id !== challenge.id);
+    const token = createSession(db, user);
+    await writeDb(db);
+    setSessionCookie(res, token);
+    json(res, 200, { ok: true, user: publicUser(user) });
     return;
   }
 

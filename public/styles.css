@@ -1563,6 +1563,18 @@ dialog::backdrop {
   font-weight: 900;
 }
 
+.link-button {
+  width: fit-content;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  text-align: left;
+}
+
 .error-shell {
   width: min(620px, 100%);
   display: grid;

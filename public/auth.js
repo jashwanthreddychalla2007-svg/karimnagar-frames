@@ -38,9 +38,17 @@ const AuthApp = (() => {
     });
     qs("[data-login-form]").hidden = name !== "login";
     qs("[data-register-form]").hidden = name !== "register";
+    const forgotForm = qs("[data-forgot-form]");
+    if (forgotForm) {
+      forgotForm.hidden = name !== "forgot";
+    }
     const otpForm = qs("[data-otp-form]");
     if (otpForm) {
       otpForm.hidden = true;
+    }
+    const resetForm = qs("[data-reset-form]");
+    if (resetForm) {
+      resetForm.hidden = true;
     }
   }
 
@@ -71,7 +79,10 @@ const AuthApp = (() => {
     const login = qs("[data-login-form]");
     const register = qs("[data-register-form]");
     const otpForm = qs("[data-otp-form]");
+    const forgotForm = qs("[data-forgot-form]");
+    const resetForm = qs("[data-reset-form]");
     const otpHelp = qs("[data-otp-help]");
+    const resetHelp = qs("[data-reset-help]");
     login.addEventListener("submit", async (event) => {
       event.preventDefault();
       try {
@@ -118,6 +129,45 @@ const AuthApp = (() => {
         toast(error.message, "error");
       }
     });
+
+    if (forgotForm && resetForm) {
+      forgotForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          const payload = formValues(forgotForm);
+          const result = await api("/api/auth/request-password-reset", {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+          forgotForm.hidden = true;
+          resetForm.hidden = false;
+          resetForm.elements.challengeId.value = result.challengeId;
+          resetForm.elements.otp.value = "";
+          resetForm.dataset.password = payload.password;
+          resetHelp.textContent = result.message + (result.demoOtp ? " Demo OTP: " + result.demoOtp : "");
+          toast(result.otpSent ? "OTP sent to your mobile." : "Use the demo OTP shown.");
+          resetForm.elements.otp.focus();
+        } catch (error) {
+          toast(error.message, "error");
+        }
+      });
+
+      resetForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          const payload = formValues(resetForm);
+          payload.password = resetForm.dataset.password || "";
+          const result = await api("/api/auth/reset-password", {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+          toast("Password reset successful.");
+          window.location.href = returnToPath(result.user);
+        } catch (error) {
+          toast(error.message, "error");
+        }
+      });
+    }
   }
 
   async function redirectIfLoggedIn() {

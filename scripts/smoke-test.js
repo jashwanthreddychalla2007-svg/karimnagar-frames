@@ -192,6 +192,12 @@ async function main() {
       headers: { Cookie: cookie }
     });
     await expectFailure("/api/products/" + newProduct.data.product.id, {}, 404);
+    const customersBeforeOtp = await request("/api/customers", {
+      headers: { Cookie: cookie }
+    });
+    if (customersBeforeOtp.data.customers.some((customer) => customer.phone === "9876543210")) {
+      throw new Error("Demo sample customer was not removed from owner customers.");
+    }
     const otpRequest = await request("/api/auth/request-otp", {
       method: "POST",
       body: JSON.stringify({
@@ -214,7 +220,47 @@ async function main() {
     if (!otpVerify.data.user.phoneVerified || otpVerify.data.user.phone !== "9123456780") {
       throw new Error("OTP registration did not create a verified phone account.");
     }
-    const customerCookie = otpVerify.response.headers.get("set-cookie").split(";")[0];
+    let customerCookie = otpVerify.response.headers.get("set-cookie").split(";")[0];
+    await request("/api/auth/logout", {
+      method: "POST",
+      headers: { Cookie: customerCookie },
+      body: "{}"
+    });
+    const resetRequest = await request("/api/auth/request-password-reset", {
+      method: "POST",
+      body: JSON.stringify({
+        phone: "9123456780",
+        password: "Customer@Reset123"
+      })
+    });
+    if (!resetRequest.data.challengeId || !resetRequest.data.demoOtp) {
+      throw new Error("Password reset did not return a demo OTP in test mode.");
+    }
+    const resetVerify = await request("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({
+        challengeId: resetRequest.data.challengeId,
+        otp: resetRequest.data.demoOtp,
+        password: "Customer@Reset123"
+      })
+    });
+    if (!resetVerify.data.user || resetVerify.data.user.phone !== "9123456780") {
+      throw new Error("Password reset did not return the customer account.");
+    }
+    const resetCookie = resetVerify.response.headers.get("set-cookie").split(";")[0];
+    await request("/api/auth/logout", {
+      method: "POST",
+      headers: { Cookie: resetCookie },
+      body: "{}"
+    });
+    const relogin = await request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        identifier: "9123456780",
+        password: "Customer@Reset123"
+      })
+    });
+    customerCookie = relogin.response.headers.get("set-cookie").split(";")[0];
     const pillowOptions = {
       "Pillow size": "12x12 inches",
       "Print side": "Both sides"
