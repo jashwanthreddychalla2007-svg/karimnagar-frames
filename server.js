@@ -1353,7 +1353,12 @@ async function handleApi(req, res, pathname, url) {
     challenge.otpChannel = delivery.channel;
     const demoAllowed = canShowDemoOtp(delivery);
     if (!delivery.sent && !demoAllowed) {
-      error(res, 502, "OTP could not be sent right now. Please try again later or contact the owner.");
+      console.warn("OTP delivery failed", {
+        channel: delivery.channel,
+        provider: delivery.provider,
+        reason: delivery.reason
+      });
+      error(res, 502, "OTP could not be sent right now. Please try again later or contact the owner.", delivery.reason || null);
       return;
     }
     db.otpChallenges = (db.otpChallenges || []).filter((item) => item.phoneKey !== mobileKey);
@@ -1468,7 +1473,12 @@ async function handleApi(req, res, pathname, url) {
     challenge.otpChannel = delivery.channel;
     const demoAllowed = canShowDemoOtp(delivery);
     if (!delivery.sent && !demoAllowed) {
-      error(res, 502, "OTP could not be sent right now. Please try again later or contact the owner.");
+      console.warn("OTP delivery failed", {
+        channel: delivery.channel,
+        provider: delivery.provider,
+        reason: delivery.reason
+      });
+      error(res, 502, "OTP could not be sent right now. Please try again later or contact the owner.", delivery.reason || null);
       return;
     }
     db.otpChallenges = (db.otpChallenges || []).filter((item) => !(item.purpose === "reset-password" && item.phoneKey === mobileKey));
