@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Love Story Frame placeholder">
+  <rect width="1200" height="900" fill="#f7fbff"/>
+  <rect x="250" y="130" width="700" height="540" rx="34" fill="#ffffff" stroke="#17202a" stroke-width="24"/>
+  <rect x="320" y="200" width="250" height="185" rx="18" fill="#ef6f6c" opacity=".9"/>
+  <rect x="620" y="200" width="250" height="185" rx="18" fill="#1ab09b" opacity=".9"/>
+  <rect x="320" y="430" width="550" height="150" rx="18" fill="#ffe2b7"/>
+  <path d="M600 470c-57-62-154-18-126 62 20 57 126 116 126 116s106-59 126-116c28-80-69-124-126-62z" fill="#ef6f6c"/>
+  <text x="600" y="780" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="800" fill="#17202a">Love Story Frame</text>
+</svg>

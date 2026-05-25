@@ -16,8 +16,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=20260524" />
-  <script defer src="/app.js?v=20260524"></script>
+  <link rel="stylesheet" href="/styles.css?v=20260525" />
+  <script defer src="/app.js?v=20260525"></script>
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -89,11 +89,11 @@
 
       <div class="hero-gallery" data-hero-gallery>
         <figure class="gallery-frame is-active">
-          <img src="https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Mug/Red/1651739612.jpg?quality=70&format=webp&w=900" alt="Custom printed mug" />
+          <img src="/assets/products/placeholders/cup-photo-printing.svg" alt="Custom printed mug" />
           <figcaption>Printed cups</figcaption>
         </figure>
         <figure class="gallery-frame">
-          <img src="https://ik.imagekit.io/2xkwa8s1i/img/npl_modified_images/Frame_photo/WPHFRCLFTWLBKS07/WPHFRCLFTWLBKS07_1.jpg?tr=w-1200" alt="Love story frame" />
+          <img src="/assets/products/placeholders/love-story-frame.svg" alt="Love story frame" />
           <figcaption>Photo frames</figcaption>
         </figure>
         <figure class="gallery-frame">
@@ -158,9 +158,9 @@
       </div>
       <div class="masonry-gallery">
         <img src="/assets/products/pillow-printing.webp" alt="Family photo pillow" />
-        <img src="https://printo-s3.dietpixels.net/cloudinary/res/dxivtqnri/image/upload/Wall-Photo-Frame/1632904698.jpg?quality=70&format=webp&w=900" alt="Premium wall frame" />
+        <img src="/assets/products/placeholders/premium-wall-frame.svg" alt="Premium wall frame" />
         <img src="/assets/products/photo-coaster-set.webp" alt="Photo coaster set" />
-        <img src="https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=1200&q=80" alt="Gift hamper with wrapped presents" />
+        <img src="/assets/products/placeholders/custom-gift-hamper.svg" alt="Gift hamper with wrapped presents" />
       </div>
     </section>
 
@@ -306,14 +306,16 @@
         <input type="text" name="name" placeholder="Your name" required />
         <input type="tel" name="phone" placeholder="Phone number" required />
         <input type="email" name="email" placeholder="Email optional" />
-        <input type="text" name="address" placeholder="Delivery address" />
+        <input type="text" name="address" placeholder="Delivery address" required />
       </div>
       <textarea name="notes" rows="4" placeholder="Names, dates, quote, colors, or any design instruction"></textarea>
-      <label class="upload-box">
-        <span>Upload preview photo</span>
-        <input type="file" accept="image/*" data-upload-input />
-      </label>
-      <div class="upload-preview" data-upload-preview hidden></div>
+      <section class="upload-panel" aria-label="Product photos">
+        <div>
+          <p class="eyebrow">Photos</p>
+          <h3>Upload required product photos</h3>
+        </div>
+        <div data-upload-slots></div>
+      </section>
       <section class="payment-panel" aria-label="Payment method">
         <div>
           <p class="eyebrow">Payment</p>
@@ -350,6 +352,13 @@
   </dialog>
 
   <div class="toast-stack" data-toast-stack aria-live="polite"></div>
+
+  <button class="floating-cart" type="button" data-open-cart aria-label="Open cart">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 18.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM4.2 5l1.2 8.4A3 3 0 0 0 8.4 16h7.7a3 3 0 0 0 2.9-2.3l1.2-5.2A1.25 1.25 0 0 0 19 7H6.4L6.1 4.9A2.25 2.25 0 0 0 3.9 3H3a1 1 0 0 0 0 2h1.2Zm2.5 4h11.2l-.9 4.2a1 1 0 0 1-1 .8H8.4a1 1 0 0 1-1-.9L6.7 9Z" />
+    </svg>
+    <span data-cart-count>0</span>
+  </button>
 
   <a class="floating-whatsapp" href="https://wa.me/9032428063" target="_blank" rel="noopener">WhatsApp</a>
 

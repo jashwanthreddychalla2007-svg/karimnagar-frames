@@ -830,6 +830,39 @@ textarea:focus {
   line-height: 1.5;
 }
 
+.dashboard-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 260px);
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.order-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.order-photos a {
+  display: grid;
+  width: 72px;
+  gap: 4px;
+  color: var(--ink);
+  text-align: center;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.order-photos img {
+  width: 72px;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: cover;
+}
+
 .quantity-row {
   display: inline-flex;
   align-items: center;
@@ -1225,11 +1258,49 @@ dialog::backdrop {
   font-weight: 900;
 }
 
+.upload-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.upload-group {
+  display: grid;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.upload-group:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.upload-group small,
+.upload-box small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
 .upload-preview {
   width: 180px;
   overflow: hidden;
   border-radius: var(--radius);
   border: 1px solid var(--line);
+}
+
+.mini-preview {
+  width: 100%;
+  max-width: 220px;
 }
 
 .upload-preview img {
@@ -1331,6 +1402,47 @@ dialog::backdrop {
   font-weight: 900;
 }
 
+.floating-cart {
+  position: fixed;
+  top: 92px;
+  right: 18px;
+  z-index: 48;
+  display: inline-flex;
+  width: 54px;
+  height: 54px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--ink);
+  box-shadow: 0 16px 34px rgba(23, 32, 42, 0.22);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.floating-cart svg {
+  width: 27px;
+  height: 27px;
+  fill: currentColor;
+}
+
+.floating-cart span {
+  position: absolute;
+  top: -5px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--coral);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .site-footer {
   display: flex;
   gap: 24px;
@@ -1374,6 +1486,15 @@ dialog::backdrop {
   gap: 18px;
 }
 
+.confirmation-shell {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
+
+.confirmation-photos {
+  margin: 18px 0;
+}
+
 .auth-art {
   display: grid;
   align-content: center;
@@ -1383,7 +1504,7 @@ dialog::backdrop {
   color: #ffffff;
   background:
     linear-gradient(140deg, rgba(23, 32, 42, 0.88), rgba(23, 32, 42, 0.35)),
-    url("https://ik.imagekit.io/2xkwa8s1i/img/npl_modified_images/Frame_photo/WPHFRCLFTWLBKS07/WPHFRCLFTWLBKS07_1.jpg?tr=w-1200") center / cover;
+    url("/assets/products/placeholders/love-story-frame.svg") center / cover;
 }
 
 .auth-art .brand small,

@@ -45,6 +45,20 @@ async function request(pathname, options = {}) {
   return { response, data };
 }
 
+async function expectFailure(pathname, options = {}, expectedStatus = 401) {
+  const response = await fetch(base + pathname, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    },
+    ...options
+  });
+  if (response.status !== expectedStatus) {
+    const text = await response.text();
+    throw new Error(pathname + " expected " + expectedStatus + " but got " + response.status + ": " + text);
+  }
+}
+
 async function main() {
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), "kf-smoke-"));
   const tempDb = path.join(temp, "db.json");
@@ -80,6 +94,14 @@ async function main() {
     await request("/owner-dashboard.html");
     await request("/customer-dashboard.html");
     await request("/api/products/cup-photo-printing");
+    await expectFailure("/api/cart", {}, 401);
+    await expectFailure("/api/orders", {
+      method: "POST",
+      body: JSON.stringify({
+        customer: { name: "Guest", phone: "9876543210", address: "Karimnagar" },
+        items: [{ productId: "cup-photo-printing", quantity: 1, options: {} }]
+      })
+    }, 401);
     const login = await request("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({
@@ -109,6 +131,72 @@ async function main() {
     });
     if (!otpVerify.data.user.phoneVerified || otpVerify.data.user.phone !== "9123456780") {
       throw new Error("OTP registration did not create a verified phone account.");
+    }
+    const customerCookie = otpVerify.response.headers.get("set-cookie").split(";")[0];
+    const pillowOptions = {
+      "Pillow size": "12x12 inches",
+      "Print side": "Both sides"
+    };
+    const pillowKey = "pillow-printing::" + JSON.stringify(pillowOptions);
+    await request("/api/cart", {
+      method: "PUT",
+      headers: { Cookie: customerCookie },
+      body: JSON.stringify({
+        items: [
+          {
+            productId: "pillow-printing",
+            quantity: 1,
+            options: pillowOptions
+          }
+        ]
+      })
+    });
+    const customerCart = await request("/api/cart", {
+      headers: { Cookie: customerCookie }
+    });
+    if (!customerCart.data.cart.items.some((item) => item.productId === "pillow-printing")) {
+      throw new Error("Logged-in cart API did not persist the pillow item.");
+    }
+    const customerOrder = await request("/api/orders", {
+      method: "POST",
+      headers: { Cookie: customerCookie },
+      body: JSON.stringify({
+        customer: {
+          name: "OTP Customer",
+          phone: "9123456780",
+          email: "otp@example.com",
+          address: "Karimnagar"
+        },
+        items: customerCart.data.cart.items,
+        payment: {
+          method: "Pay on Delivery"
+        },
+        uploads: [
+          {
+            name: "front.png",
+            label: "Front Side Photo",
+            itemKey: pillowKey,
+            productId: "pillow-printing",
+            dataUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+          },
+          {
+            name: "back.png",
+            label: "Back Side Photo",
+            itemKey: pillowKey,
+            productId: "pillow-printing",
+            dataUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+          }
+        ]
+      })
+    });
+    if (!customerOrder.data.order.uploads || customerOrder.data.order.uploads.length !== 2) {
+      throw new Error("Multi-photo customer order did not save both uploaded photos.");
+    }
+    const emptyCustomerCart = await request("/api/cart", {
+      headers: { Cookie: customerCookie }
+    });
+    if (emptyCustomerCart.data.cart.items.length) {
+      throw new Error("Customer cart was not cleared after checkout.");
     }
     await request("/api/dashboard/stats", {
       headers: { Cookie: cookie }

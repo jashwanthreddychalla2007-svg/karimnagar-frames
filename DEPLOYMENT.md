@@ -48,16 +48,22 @@ Best simple option for beginners.
    - Build Command: `npm install`
    - Start Command: `npm start`
    - Environment variable: `HOST=0.0.0.0`
-5. Deploy.
+   - Environment variable: `DATA_FILE=/var/data/db.json`
+   - Environment variable: `UPLOAD_DIR=/var/data/uploads`
+5. Add a Render disk:
+   - Disk name: `karimnagar-frames-data`
+   - Mount path: `/var/data`
+   - Size: `1 GB`
+6. Deploy.
 
-For demo use, the default JSON database can work. For real orders, add persistent storage and set:
+For demo use, the default JSON database can work. For real orders, persistent storage is required:
 
 ```text
-DB_FILE=/var/data/db.json
+DATA_FILE=/var/data/db.json
 UPLOAD_DIR=/var/data/uploads
 ```
 
-Without persistent storage, orders/uploads can be lost when the service restarts or redeploys.
+Without a Render disk or another persistent database/storage provider, orders and uploaded photos can be lost when the service restarts or redeploys. The included `render.yaml` is already configured for `/var/data`; make sure the disk is created in Render.
 
 ## OTP SMS
 
@@ -105,6 +111,10 @@ npm start
 ## Production Notes
 
 - The current payment flow saves the customer-selected payment method and lets the owner mark payment as paid from the dashboard.
+- Ordering and cart APIs require login. Guest checkout is blocked.
+- Product photo uploads are stored under `UPLOAD_DIR`, and order records save the uploaded image URLs.
+- Product catalog and multi-photo rules are configured in `data/catalog.json`. Private users, sessions, carts, orders, and contacts stay in the runtime database file.
+- The included generated SVG product images are placeholders for products where original product photos were missing. Replace files in `public/assets/products/placeholders/` with real product photos whenever available.
 - A real card/UPI gateway such as Razorpay requires merchant credentials and should be added only after you create that account.
 - Keep `data/db.json` private because it contains users, sessions, orders, and password hashes.
 - Back up `data/db.json` and the `uploads` folder regularly.

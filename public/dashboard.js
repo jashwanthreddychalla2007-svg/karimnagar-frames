@@ -7,7 +7,9 @@ const DashboardApp = (() => {
     settings: null,
     contacts: [],
     customers: [],
-    customerQuery: ""
+    customerQuery: "",
+    orderQuery: "",
+    orderStatus: ""
   };
 
   const qs = (selector, root = document) => root.querySelector(selector);
@@ -91,6 +93,13 @@ const DashboardApp = (() => {
     return order.items.map((item) => item.name + " x " + item.quantity).join(", ");
   }
 
+  function orderUploads(order) {
+    if (Array.isArray(order.uploads) && order.uploads.length) {
+      return order.uploads;
+    }
+    return order.upload ? [order.upload] : [];
+  }
+
   function orderPayment(order) {
     const payment = order.payment || {};
     const method = payment.method || "Pay on Delivery";
@@ -107,17 +116,28 @@ const DashboardApp = (() => {
     if (!table) {
       return;
     }
-    if (!state.orders.length) {
+    const isAdmin = state.user.role === "admin";
+    const query = state.orderQuery.trim().toLowerCase();
+    const orders = state.orders.filter((order) => {
+      if (state.orderStatus && order.status !== state.orderStatus) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+      const text = [order.id, order.status, order.customer.name, order.customer.phone, order.customer.address, orderItemsText(order), order.createdAt].join(" ").toLowerCase();
+      return text.includes(query);
+    });
+    if (!orders.length) {
       table.innerHTML = "<tr><td colspan=\"7\">No orders yet.</td></tr>";
       return;
     }
-    const statuses = ["New", "Preview", "Approved", "Printing", "Ready", "Delivered", "Cancelled"];
+    const statuses = ["Pending", "Accepted", "Printing", "Shipped", "Delivered", "Cancelled"];
     const paymentStatuses = ["Pending", "Awaiting Confirmation", "Paid", "Failed", "Refunded", "Cancelled"];
-    const isAdmin = state.user.role === "admin";
-    table.innerHTML = state.orders.map((order) => `
+    table.innerHTML = orders.map((order) => `
       <tr>
         <td><strong>${order.id}</strong><br><small>${new Date(order.createdAt).toLocaleString()}</small></td>
-        <td>${order.customer.name}<br><small>${order.customer.phone}</small></td>
+        <td>${order.customer.name}<br><small>${order.customer.phone}</small><br><small>${order.customer.address || ""}</small></td>
         <td>${orderItemsText(order)}</td>
         <td>${money(order.total)}</td>
         <td>
@@ -139,7 +159,16 @@ const DashboardApp = (() => {
         <td>
           ${isAdmin && order.customerWhatsappUrl ? `<a class="btn btn-outline" href="${order.customerWhatsappUrl}" target="_blank" rel="noopener">Chat Customer</a>` : ""}
           ${!isAdmin && order.whatsappUrl ? `<a class="btn btn-outline" href="${order.whatsappUrl}" target="_blank" rel="noopener">Chat Owner</a>` : ""}
-          ${order.upload ? `<a class="btn btn-outline" href="${order.upload.url}" target="_blank" rel="noopener">Image</a>` : ""}
+          ${orderUploads(order).length ? `
+            <div class="order-photos">
+              ${orderUploads(order).map((upload, index) => `
+                <a href="${upload.url}" target="_blank" rel="noopener" title="${upload.label || "Photo " + (index + 1)}">
+                  <img src="${upload.url}" alt="${upload.label || "Order photo " + (index + 1)}" />
+                  <span>${upload.label || "Photo " + (index + 1)}</span>
+                </a>
+              `).join("")}
+            </div>
+          ` : ""}
         </td>
       </tr>
     `).join("");
@@ -272,7 +301,7 @@ const DashboardApp = (() => {
               <span>${new Date(order.createdAt).toLocaleString()}</span>
               <span>${orderItemsText(order)}</span>
               <span>${money(order.total)} - ${order.status}</span>
-              ${order.upload ? `<a href="${order.upload.url}" target="_blank" rel="noopener">Photo</a>` : ""}
+              ${orderUploads(order).length ? `<a href="${orderUploads(order)[0].url}" target="_blank" rel="noopener">Photo</a>` : ""}
             </div>
           `).join("") : "<p>No previous orders.</p>"}
         </div>
@@ -320,6 +349,23 @@ const DashboardApp = (() => {
       state.customerQuery = input.value;
       renderCustomers();
     });
+  }
+
+  function setupOrderFilters() {
+    const search = qs("[data-order-search]");
+    const status = qs("[data-order-status-filter]");
+    if (search) {
+      search.addEventListener("input", () => {
+        state.orderQuery = search.value;
+        renderOrders();
+      });
+    }
+    if (status) {
+      status.addEventListener("change", () => {
+        state.orderStatus = status.value;
+        renderOrders();
+      });
+    }
   }
 
   function setupProfile() {
@@ -381,6 +427,7 @@ const DashboardApp = (() => {
     setupProfile();
     setupRefresh();
     setupCustomerSearch();
+    setupOrderFilters();
     try {
       const me = await api("/api/auth/me");
       if (!me.user) {

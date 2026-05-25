@@ -1,0 +1,603 @@
+{
+  "settings": {
+    "storeName": "Karimnagar Frames",
+    "tagline": "Custom frames, printed cups, and photo pillows",
+    "location": "Karimnagar, Telangana, India",
+    "primaryPhone": "9032428063",
+    "whatsappPhone": "9032428063",
+    "supportPhones": [
+      "9032428063"
+    ],
+    "currency": "INR",
+    "shippingWindow": "3 to 7 working days",
+    "returnWindow": "3 days for damaged or mismatched products",
+    "orderPrefix": "KF",
+    "businessHours": "10:00 AM to 8:00 PM",
+    "publicUrl": "https://karimnagar-frames.onrender.com",
+    "instagramUrl": "https://www.instagram.com/karimnagar_photo_frames/",
+    "paymentMethods": [
+      "Pay on Delivery",
+      "UPI after Preview",
+      "Pay at Store"
+    ],
+    "paymentNote": "Online gateway keys are not configured, so the owner confirms payments from the dashboard after design preview."
+  },
+  "products": [
+    {
+      "id": "cup-photo-printing",
+      "name": "Cup Photo Printing",
+      "category": "cups",
+      "summary": "Glossy ceramic mug printed with your photo, name, logo, or quote.",
+      "description": "A bright daily-use ceramic mug with high-quality photo printing. Perfect for birthdays, office gifts, couple gifts, and branding.",
+      "basePrice": 249,
+      "rating": 4.8,
+      "featured": true,
+      "badge": "Best seller",
+      "turnaround": "1 day preview",
+      "images": [
+        "/assets/products/placeholders/cup-photo-printing.svg",
+        "/assets/products/photo-coaster-set.webp",
+        "/assets/products/mini-desk-frame.jpg"
+      ],
+      "photoRequirements": {
+        "min": 1,
+        "max": 2,
+        "labels": [
+          "Mug Photo",
+          "Optional Back Side Photo"
+        ]
+      },
+      "tags": [
+        "photo mug",
+        "logo mug",
+        "gift",
+        "ceramic"
+      ],
+      "features": [
+        "High-quality ceramic mug",
+        "Photo, name, logo, or quote printing",
+        "Glossy finish with vibrant colors",
+        "Preview shared before printing"
+      ],
+      "options": [
+        {
+          "name": "Cup style",
+          "choices": [
+            {
+              "label": "White Glossy",
+              "price": 0
+            },
+            {
+              "label": "Color Inside",
+              "price": 50
+            },
+            {
+              "label": "Magic Mug",
+              "price": 100
+            },
+            {
+              "label": "Logo Mug",
+              "price": 30
+            }
+          ]
+        },
+        {
+          "name": "Print layout",
+          "choices": [
+            {
+              "label": "One side print",
+              "price": 0
+            },
+            {
+              "label": "Two side print",
+              "price": 80
+            },
+            {
+              "label": "Wraparound print",
+              "price": 120
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "love-story-frame",
+      "name": "Love Story Frame",
+      "category": "frames",
+      "summary": "Milestone frame with names, dates, photos, and a personal message.",
+      "description": "A premium printed frame for anniversaries, weddings, couple memories, and family moments.",
+      "basePrice": 799,
+      "rating": 4.9,
+      "featured": true,
+      "badge": "Popular gift",
+      "turnaround": "Preview before print",
+      "images": [
+        "/assets/products/placeholders/love-story-frame.svg",
+        "/assets/products/photo-coaster-set.webp",
+        "/assets/products/pillow-printing.webp"
+      ],
+      "photoRequirements": {
+        "min": 3,
+        "max": 6,
+        "labels": [
+          "Photo 1",
+          "Photo 2",
+          "Photo 3",
+          "Photo 4",
+          "Photo 5",
+          "Photo 6"
+        ]
+      },
+      "tags": [
+        "love frame",
+        "anniversary",
+        "wedding",
+        "wall decor"
+      ],
+      "features": [
+        "Custom names and milestone dates",
+        "Multiple photo layouts",
+        "Matte or glossy finish",
+        "WhatsApp preview before printing"
+      ],
+      "options": [
+        {
+          "name": "Frame size",
+          "choices": [
+            {
+              "label": "A4 Love Story Frame",
+              "price": 0
+            },
+            {
+              "label": "12x18 Premium Frame",
+              "price": 300
+            },
+            {
+              "label": "16x20 Wall Frame",
+              "price": 800
+            },
+            {
+              "label": "Photo Collage Frame",
+              "price": 500
+            }
+          ]
+        },
+        {
+          "name": "Finish",
+          "choices": [
+            {
+              "label": "Matte finish",
+              "price": 0
+            },
+            {
+              "label": "Glossy finish",
+              "price": 100
+            },
+            {
+              "label": "Premium glass look",
+              "price": 180
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pillow-printing",
+      "name": "Pillow Printing",
+      "category": "pillows",
+      "summary": "Soft photo pillow printed with your photo, name, date, or quote.",
+      "description": "A cozy printed cushion for bedrooms, sofas, families, kids, and couple gifts.",
+      "basePrice": 499,
+      "rating": 4.7,
+      "featured": true,
+      "badge": "Soft finish",
+      "turnaround": "Multiple sizes",
+      "images": [
+        "/assets/products/pillow-printing.webp",
+        "/assets/products/placeholders/premium-wall-frame.svg",
+        "/assets/products/photo-coaster-set.webp"
+      ],
+      "photoRequirements": {
+        "min": 1,
+        "max": 2,
+        "labels": [
+          "Front Side Photo",
+          "Back Side Photo"
+        ],
+        "rules": [
+          {
+            "when": {
+              "option": "Print side",
+              "value": "Both sides"
+            },
+            "min": 2,
+            "max": 2,
+            "labels": [
+              "Front Side Photo",
+              "Back Side Photo"
+            ]
+          }
+        ]
+      },
+      "tags": [
+        "photo pillow",
+        "cushion",
+        "family gift",
+        "home decor"
+      ],
+      "features": [
+        "Soft cushion fabric",
+        "Bright custom photo print",
+        "One side or both sides printing",
+        "Live preview before order"
+      ],
+      "options": [
+        {
+          "name": "Pillow size",
+          "choices": [
+            {
+              "label": "12x12 inches",
+              "price": 0
+            },
+            {
+              "label": "16x16 inches",
+              "price": 150
+            },
+            {
+              "label": "18x18 inches",
+              "price": 300
+            }
+          ]
+        },
+        {
+          "name": "Print side",
+          "choices": [
+            {
+              "label": "One side print",
+              "price": 0
+            },
+            {
+              "label": "Both sides print",
+              "price": 180
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "magic-mug",
+      "name": "Magic Mug",
+      "category": "cups",
+      "summary": "Heat reveal mug that shows the print when hot liquid is poured.",
+      "description": "A surprise photo mug for birthdays, couples, and fun daily gifts.",
+      "basePrice": 349,
+      "rating": 4.6,
+      "featured": false,
+      "badge": "Surprise pick",
+      "turnaround": "Photo reveal",
+      "images": [
+        "/assets/products/magic-mug.webp",
+        "/assets/products/photo-coaster-set.webp",
+        "/assets/products/pillow-printing.webp"
+      ],
+      "photoRequirements": {
+        "min": 1,
+        "max": 1,
+        "labels": [
+          "Reveal Photo"
+        ]
+      },
+      "tags": [
+        "magic mug",
+        "heat reveal",
+        "surprise gift"
+      ],
+      "features": [
+        "Heat reveal coating",
+        "Custom photo and text",
+        "Glossy black finish",
+        "Gift-ready packaging"
+      ],
+      "options": [
+        {
+          "name": "Print layout",
+          "choices": [
+            {
+              "label": "One side print",
+              "price": 0
+            },
+            {
+              "label": "Two side print",
+              "price": 90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "premium-wall-frame",
+      "name": "Premium Wall Frame",
+      "category": "frames",
+      "summary": "Sharp wall frame for home, office, family, or brand display.",
+      "description": "A sturdy wall frame with matte or glossy photo printing for premium decor.",
+      "basePrice": 599,
+      "rating": 4.7,
+      "featured": false,
+      "badge": "Home decor",
+      "turnaround": "Matte or glossy",
+      "images": [
+        "/assets/products/placeholders/premium-wall-frame.svg",
+        "/assets/products/photo-coaster-set.webp"
+      ],
+      "photoRequirements": {
+        "min": 1,
+        "max": 4,
+        "labels": [
+          "Main Photo",
+          "Optional Photo 2",
+          "Optional Photo 3",
+          "Optional Photo 4"
+        ]
+      },
+      "tags": [
+        "wall frame",
+        "decor",
+        "family photo"
+      ],
+      "features": [
+        "Sturdy frame body",
+        "Premium photo print",
+        "Family and office layouts",
+        "Multiple size options"
+      ],
+      "options": [
+        {
+          "name": "Frame size",
+          "choices": [
+            {
+              "label": "A4 Frame",
+              "price": 0
+            },
+            {
+              "label": "12x18 Frame",
+              "price": 350
+            },
+            {
+              "label": "16x20 Frame",
+              "price": 780
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gift-combo-pack",
+      "name": "Gift Combo Pack",
+      "category": "combos",
+      "summary": "Custom bundle with cup, frame, pillow, and greeting card options.",
+      "description": "A ready-to-gift personalized bundle for birthdays, anniversaries, farewell gifts, and events.",
+      "basePrice": 999,
+      "rating": 4.8,
+      "featured": true,
+      "badge": "Combo deal",
+      "turnaround": "Custom bundle",
+      "images": [
+        "/assets/products/placeholders/gift-combo-pack.svg",
+        "/assets/products/pillow-printing.webp",
+        "/assets/products/mini-desk-frame.jpg",
+        "/assets/products/photo-coaster-set.webp"
+      ],
+      "photoRequirements": {
+        "min": 3,
+        "max": 5,
+        "labels": [
+          "Cup Photo",
+          "Frame Photo",
+          "Pillow Photo",
+          "Card Photo",
+          "Extra Photo"
+        ]
+      },
+      "tags": [
+        "combo",
+        "birthday",
+        "anniversary",
+        "bulk"
+      ],
+      "features": [
+        "Mix cup, frame, and pillow",
+        "Custom greeting message",
+        "Bulk order support",
+        "Preview before printing"
+      ],
+      "options": [
+        {
+          "name": "Combo type",
+          "choices": [
+            {
+              "label": "Cup + Frame",
+              "price": 0
+            },
+            {
+              "label": "Cup + Pillow",
+              "price": 150
+            },
+            {
+              "label": "Frame + Pillow",
+              "price": 350
+            },
+            {
+              "label": "Cup + Frame + Pillow",
+              "price": 700
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mini-desk-frame",
+      "name": "Mini Desk Frame",
+      "category": "frames",
+      "summary": "Compact personalized desk frame for work tables, study rooms, and bedside gifting.",
+      "description": "A small premium frame for a favorite memory, quote, baby photo, couple photo, or family picture.",
+      "basePrice": 399,
+      "rating": 4.6,
+      "featured": false,
+      "badge": "Desk decor",
+      "turnaround": "Quick preview",
+      "images": [
+        "/assets/products/mini-desk-frame.jpg",
+        "/assets/products/photo-coaster-set.webp",
+        "/assets/products/pillow-printing.webp"
+      ],
+      "photoRequirements": {
+        "min": 1,
+        "max": 2,
+        "labels": [
+          "Desk Frame Photo",
+          "Optional Alternate Photo"
+        ]
+      },
+      "tags": [
+        "mini frame",
+        "desk decor",
+        "photo gift"
+      ],
+      "features": [
+        "Compact table-friendly size",
+        "Photo or quote layout",
+        "Matte finish option",
+        "Good for desks and bedside tables"
+      ],
+      "options": [
+        {
+          "name": "Frame style",
+          "choices": [
+            {
+              "label": "Classic desk frame",
+              "price": 0
+            },
+            {
+              "label": "Premium border frame",
+              "price": 120
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "photo-coaster-set",
+      "name": "Photo Coaster Set",
+      "category": "cups",
+      "summary": "A matching coaster set with photos, initials, or small logo artwork.",
+      "description": "Pair printed cups with custom coasters for a more complete gift set or office branding pack.",
+      "basePrice": 299,
+      "rating": 4.5,
+      "featured": false,
+      "badge": "Cup add-on",
+      "turnaround": "Set of 4",
+      "images": [
+        "/assets/products/photo-coaster-set.webp",
+        "/assets/products/magic-mug.webp",
+        "/assets/products/mini-desk-frame.jpg"
+      ],
+      "photoRequirements": {
+        "min": 4,
+        "max": 4,
+        "labels": [
+          "Coaster Photo 1",
+          "Coaster Photo 2",
+          "Coaster Photo 3",
+          "Coaster Photo 4"
+        ]
+      },
+      "tags": [
+        "coasters",
+        "cup gift",
+        "logo gift"
+      ],
+      "features": [
+        "Set of 4 matching coasters",
+        "Photo, initials, or logo print",
+        "Great with printed mugs",
+        "Useful for office and home gifting"
+      ],
+      "options": [
+        {
+          "name": "Coaster shape",
+          "choices": [
+            {
+              "label": "Square set",
+              "price": 0
+            },
+            {
+              "label": "Round set",
+              "price": 40
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "custom-gift-hamper",
+      "name": "Custom Gift Hamper",
+      "category": "combos",
+      "summary": "A premium gift hamper with a personalized product mix and greeting note.",
+      "description": "Build a colorful hamper using a cup, frame, pillow, coaster, and message card for special occasions.",
+      "basePrice": 1499,
+      "rating": 4.8,
+      "featured": true,
+      "badge": "Premium hamper",
+      "turnaround": "Occasion ready",
+      "images": [
+        "/assets/products/placeholders/custom-gift-hamper.svg",
+        "/assets/products/pillow-printing.webp",
+        "/assets/products/mini-desk-frame.jpg",
+        "/assets/products/photo-coaster-set.webp"
+      ],
+      "photoRequirements": {
+        "min": 3,
+        "max": 6,
+        "labels": [
+          "Main Gift Photo",
+          "Frame Photo",
+          "Mug Photo",
+          "Pillow Photo",
+          "Card Photo",
+          "Extra Photo"
+        ]
+      },
+      "tags": [
+        "hamper",
+        "premium gift",
+        "birthday",
+        "anniversary"
+      ],
+      "features": [
+        "Personalized product mix",
+        "Custom greeting note",
+        "Premium gift presentation",
+        "Best for birthdays and anniversaries"
+      ],
+      "options": [
+        {
+          "name": "Hamper type",
+          "choices": [
+            {
+              "label": "Starter hamper",
+              "price": 0
+            },
+            {
+              "label": "Premium hamper",
+              "price": 600
+            },
+            {
+              "label": "Family hamper",
+              "price": 1000
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

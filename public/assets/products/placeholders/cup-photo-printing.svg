@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Cup Photo Printing placeholder">
+  <rect width="1200" height="900" fill="#fff5df"/>
+  <circle cx="940" cy="170" r="160" fill="#1ab09b" opacity=".18"/>
+  <circle cx="230" cy="760" r="210" fill="#ef6f6c" opacity=".18"/>
+  <rect x="345" y="215" width="390" height="465" rx="52" fill="#ffffff" stroke="#17202a" stroke-width="22"/>
+  <path d="M735 330h95c88 0 150 61 150 145s-62 145-150 145h-95v-74h88c45 0 78-29 78-71s-33-71-78-71h-88z" fill="#ffffff" stroke="#17202a" stroke-width="22"/>
+  <rect x="400" y="315" width="280" height="235" rx="28" fill="#f06767"/>
+  <circle cx="482" cy="402" r="54" fill="#ffe2b7"/>
+  <path d="M415 520c50-82 97-98 142-49 31-34 70-27 113 49z" fill="#1ab09b"/>
+  <text x="600" y="790" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="800" fill="#17202a">Cup Photo Printing</text>
+</svg>

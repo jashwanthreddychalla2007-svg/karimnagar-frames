@@ -1,8 +1,8 @@
 "use strict";
 
 const ProductPage = (() => {
-  const CART_KEY = "kf_cart_v2";
   const state = {
+    user: null,
     product: null,
     products: [],
     imageIndex: 0,
@@ -59,8 +59,15 @@ const ProductPage = (() => {
     { name: "Sneha K.", rating: 5, title: "Superfast delivery", body: "Very nice quality, came as expected with quick delivery." }
   ];
 
-  async function api(path) {
-    const response = await fetch(path, { credentials: "include" });
+  async function api(path, options = {}) {
+    const response = await fetch(path, {
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      },
+      ...options
+    });
     const data = await response.json();
     if (!response.ok || !data.ok) {
       throw new Error((data.error && data.error.message) || "Something went wrong.");
@@ -80,17 +87,42 @@ const ProductPage = (() => {
     window.setTimeout(() => item.remove(), 3400);
   }
 
-  function loadCart() {
-    try {
-      state.cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-    } catch (error) {
-      state.cart = [];
+  function returnToLogin() {
+    const returnTo = window.location.pathname + window.location.search + window.location.hash;
+    window.location.href = "/auth.html?returnTo=" + encodeURIComponent(returnTo || "/");
+  }
+
+  function requireLogin() {
+    if (state.user) {
+      return true;
     }
+    toast("Please login before adding products to cart.", "error");
+    window.setTimeout(returnToLogin, 650);
+    return false;
+  }
+
+  async function loadAccountAndCart() {
+    const account = await api("/api/auth/me");
+    state.user = account.user || null;
+    if (!state.user) {
+      state.cart = [];
+      updateCartCount();
+      return;
+    }
+    const result = await api("/api/cart");
+    state.cart = result.cart.items || [];
     updateCartCount();
   }
 
-  function saveCart() {
-    localStorage.setItem(CART_KEY, JSON.stringify(state.cart));
+  async function saveCart() {
+    if (!state.user) {
+      return;
+    }
+    const result = await api("/api/cart", {
+      method: "PUT",
+      body: JSON.stringify({ items: state.cart })
+    });
+    state.cart = result.cart.items || [];
     updateCartCount();
   }
 
@@ -331,6 +363,9 @@ const ProductPage = (() => {
     qsa("[data-pdp-option]", root).forEach((input) => input.addEventListener("change", updateTotal));
     qs("[data-pdp-quantity]", root).addEventListener("input", updateTotal);
     qs("[data-add-detail]", root).addEventListener("click", () => {
+      if (!requireLogin()) {
+        return;
+      }
       const options = selectedOptions(root, state.product);
       const quantity = Math.max(1, Number(qs("[data-pdp-quantity]", root).value) || 1);
       const item = {
@@ -348,8 +383,9 @@ const ProductPage = (() => {
       } else {
         state.cart.push(item);
       }
-      saveCart();
-      toast(state.product.name + " added to cart.");
+      saveCart()
+        .then(() => toast(state.product.name + " added to cart."))
+        .catch((error) => toast(error.message, "error"));
     });
     updateTotal();
   }
@@ -387,14 +423,15 @@ const ProductPage = (() => {
 
   async function init() {
     setupNavigation();
-    loadCart();
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id") || "cup-photo-printing";
     try {
-      const [productResult, productsResult] = await Promise.all([
+      const [accountResult, productResult, productsResult] = await Promise.all([
+        loadAccountAndCart().catch(() => null),
         api("/api/products/" + encodeURIComponent(id)),
         api("/api/products")
       ]);
+      void accountResult;
       state.product = productResult.product;
       state.products = productsResult.products;
       renderProduct();

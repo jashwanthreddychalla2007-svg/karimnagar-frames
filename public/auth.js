@@ -52,6 +52,15 @@ const AuthApp = (() => {
     return user && user.role === "admin" ? "/owner-dashboard.html" : "/customer-dashboard.html";
   }
 
+  function returnToPath(user) {
+    const params = new URLSearchParams(window.location.search);
+    const returnTo = params.get("returnTo");
+    if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") && user && user.role !== "admin") {
+      return returnTo;
+    }
+    return dashboardPath(user);
+  }
+
   function setupTabs() {
     qsa("[data-auth-tab]").forEach((button) => {
       button.addEventListener("click", () => showTab(button.dataset.authTab));
@@ -71,7 +80,7 @@ const AuthApp = (() => {
           body: JSON.stringify(formValues(login))
         });
         toast("Login successful.");
-        window.location.href = dashboardPath(result.user);
+        window.location.href = returnToPath(result.user);
       } catch (error) {
         toast(error.message, "error");
       }
@@ -104,7 +113,7 @@ const AuthApp = (() => {
           body: JSON.stringify(formValues(otpForm))
         });
         toast("Mobile verified. Account created.");
-        window.location.href = dashboardPath(result.user);
+        window.location.href = returnToPath(result.user);
       } catch (error) {
         toast(error.message, "error");
       }
@@ -115,7 +124,7 @@ const AuthApp = (() => {
     try {
       const result = await api("/api/auth/me");
       if (result.user) {
-        window.location.href = dashboardPath(result.user);
+        window.location.href = returnToPath(result.user);
       }
     } catch (error) {
       return null;

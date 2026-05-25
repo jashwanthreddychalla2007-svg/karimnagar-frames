@@ -9,7 +9,8 @@ const crypto = require("crypto");
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
 const DEFAULT_DATA_FILE = path.join(ROOT, "data", "db.json");
-const DATA_FILE = process.env.DB_FILE || path.join(ROOT, "data", "db.json");
+const CATALOG_FILE = path.join(ROOT, "data", "catalog.json");
+const DATA_FILE = process.env.DATA_FILE || process.env.DB_FILE || path.join(ROOT, "data", "db.json");
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(ROOT, "uploads");
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -17,6 +18,7 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
 const PAYMENT_METHODS = ["Pay on Delivery", "UPI after Preview", "Pay at Store"];
 const PAYMENT_STATUSES = ["Pending", "Awaiting Confirmation", "Paid", "Failed", "Refunded", "Cancelled"];
+const ORDER_STATUSES = ["Pending", "Accepted", "Printing", "Shipped", "Delivered", "Cancelled"];
 const OTP_TTL_MS = 1000 * 60 * 10;
 const OTP_MAX_ATTEMPTS = 5;
 
@@ -103,7 +105,24 @@ async function ensureDataFile() {
 async function readDb() {
   await ensureDataFile();
   const text = await fsp.readFile(DATA_FILE, "utf8");
-  return JSON.parse(text);
+  const db = JSON.parse(text);
+  return applyCatalog(db);
+}
+
+async function applyCatalog(db) {
+  try {
+    const text = await fsp.readFile(CATALOG_FILE, "utf8");
+    const catalog = JSON.parse(text);
+    if (catalog.settings && typeof catalog.settings === "object") {
+      db.settings = { ...(db.settings || {}), ...catalog.settings };
+    }
+    if (Array.isArray(catalog.products) && catalog.products.length) {
+      db.products = catalog.products;
+    }
+  } catch (error) {
+    return db;
+  }
+  return db;
 }
 
 async function writeDb(db) {
@@ -347,6 +366,75 @@ function productPrice(product, selectedOptions = {}) {
   return total;
 }
 
+function defaultUploadLabels(max) {
+  return Array.from({ length: Math.max(1, Number(max) || 1) }, (_, index) => "Photo " + (index + 1));
+}
+
+function productPhotoRequirement(product, selectedOptions = {}) {
+  const config = product.photoRequirements && typeof product.photoRequirements === "object" ? product.photoRequirements : {};
+  let requirement = {
+    min: Number(config.min) || 1,
+    max: Number(config.max) || Math.max(1, Number(config.min) || 1),
+    labels: Array.isArray(config.labels) && config.labels.length ? config.labels : defaultUploadLabels(config.max || config.min || 1)
+  };
+  (config.rules || []).forEach((rule) => {
+    const when = rule.when || {};
+    if (when.option && selectedOptions[when.option] === when.value) {
+      requirement = {
+        min: Number(rule.min) || requirement.min,
+        max: Number(rule.max) || requirement.max,
+        labels: Array.isArray(rule.labels) && rule.labels.length ? rule.labels : requirement.labels
+      };
+    }
+  });
+  if (requirement.max < requirement.min) {
+    requirement.max = requirement.min;
+  }
+  if (requirement.labels.length < requirement.max) {
+    requirement.labels = requirement.labels.concat(defaultUploadLabels(requirement.max).slice(requirement.labels.length));
+  }
+  return requirement;
+}
+
+function cartKey(item) {
+  return item.productId + "::" + JSON.stringify(item.options || {});
+}
+
+function normalizeCartItems(db, items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  return items.map((item) => {
+    const product = db.products.find((entry) => entry.id === item.productId);
+    if (!product) {
+      throw new Error("Invalid product in cart.");
+    }
+    const quantity = Math.min(50, Math.max(1, Number(item.quantity) || 1));
+    const selectedOptions = item.options && typeof item.options === "object" ? item.options : {};
+    const unitPrice = productPrice(product, selectedOptions);
+    const normalized = {
+      productId: product.id,
+      name: product.name,
+      image: product.images && product.images[0] ? product.images[0] : "",
+      quantity,
+      unitPrice,
+      options: selectedOptions
+    };
+    normalized.cartKey = cartKey(normalized);
+    return normalized;
+  });
+}
+
+function userCart(db, userId) {
+  db.carts = db.carts || [];
+  let cart = db.carts.find((entry) => entry.userId === userId);
+  if (!cart) {
+    cart = { userId, items: [], updatedAt: now() };
+    db.carts.push(cart);
+  }
+  return cart;
+}
+
 function paymentFromInput(input, total) {
   const payment = input && typeof input === "object" ? input : {};
   const method = PAYMENT_METHODS.includes(payment.method) ? payment.method : PAYMENT_METHODS[0];
@@ -394,8 +482,67 @@ async function saveUpload(upload) {
     originalName: String(upload.name || filename).slice(0, 120),
     url: "/uploads/" + filename,
     size: bytes.length,
-    type: "image/" + ext
+    type: "image/" + ext,
+    label: String(upload.label || "Photo").trim().slice(0, 80),
+    itemKey: String(upload.itemKey || "").slice(0, 260),
+    productId: String(upload.productId || "").slice(0, 80)
   };
+}
+
+function normalizeRawUploads(rawUploads, items) {
+  const uploads = Array.isArray(rawUploads) ? rawUploads : [];
+  const firstItem = items[0];
+  return uploads
+    .filter((upload) => upload && upload.dataUrl)
+    .map((upload, index) => ({
+      ...upload,
+      label: String(upload.label || (uploads.length === 1 ? "Customer photo" : "Photo " + (index + 1))).trim().slice(0, 80),
+      itemKey: String(upload.itemKey || (firstItem && firstItem.cartKey) || "").slice(0, 260),
+      productId: String(upload.productId || (firstItem && firstItem.productId) || "").slice(0, 80)
+    }));
+}
+
+function validateOrderUploads(items, uploads, products) {
+  for (const item of items) {
+    const product = products.find((entry) => entry.id === item.productId);
+    const requirement = productPhotoRequirement(product, item.options);
+    const itemUploads = uploads.filter((upload) => upload.itemKey === item.cartKey || (!upload.itemKey && upload.productId === item.productId));
+    if (itemUploads.length < requirement.min) {
+      throw new Error(item.name + " requires at least " + requirement.min + " photo" + (requirement.min === 1 ? "." : "s."));
+    }
+    if (itemUploads.length > requirement.max) {
+      throw new Error(item.name + " accepts a maximum of " + requirement.max + " photo" + (requirement.max === 1 ? "." : "s."));
+    }
+  }
+}
+
+async function saveUploads(uploads) {
+  const saved = [];
+  for (const upload of uploads) {
+    const result = await saveUpload(upload);
+    if (result) {
+      saved.push(result);
+    }
+  }
+  return saved;
+}
+
+function orderUploads(order) {
+  if (Array.isArray(order.uploads) && order.uploads.length) {
+    return order.uploads;
+  }
+  return order.upload ? [order.upload] : [];
+}
+
+function absoluteUploadUrl(upload, settings) {
+  if (!upload || !upload.url) {
+    return "";
+  }
+  if (/^https?:\/\//.test(upload.url)) {
+    return upload.url;
+  }
+  const baseUrl = String(settings.publicUrl || "").replace(/\/$/, "");
+  return baseUrl ? baseUrl + upload.url : upload.url;
 }
 
 function buildWhatsAppText(order, settings) {
@@ -421,10 +568,9 @@ function buildWhatsAppText(order, settings) {
   if (order.notes) {
     lines.push("Notes: " + order.notes);
   }
-  if (order.upload && order.upload.url) {
-    const baseUrl = String(settings.publicUrl || "").replace(/\/$/, "");
-    lines.push("Customer photo: " + (baseUrl ? baseUrl + order.upload.url : order.upload.url));
-  }
+  orderUploads(order).forEach((upload, index) => {
+    lines.push((upload.label || "Customer photo " + (index + 1)) + ": " + absoluteUploadUrl(upload, settings));
+  });
   lines.push("");
   lines.push("Please confirm preview and delivery details.");
   const phone = String(settings.whatsappPhone || settings.primaryPhone || "").replace(/[^\d]/g, "");
@@ -443,11 +589,11 @@ function whatsAppCustomerPhone(phone) {
 }
 
 function orderPhotoUrl(order, settings) {
-  if (!order.upload || !order.upload.url) {
+  const upload = orderUploads(order)[0];
+  if (!upload || !upload.url) {
     return "";
   }
-  const baseUrl = String(settings.publicUrl || "").replace(/\/$/, "");
-  return baseUrl ? baseUrl + order.upload.url : order.upload.url;
+  return absoluteUploadUrl(upload, settings);
 }
 
 function buildCustomerWhatsAppText(order, settings) {
@@ -463,10 +609,12 @@ function buildCustomerWhatsAppText(order, settings) {
   order.items.forEach((item) => {
     lines.push("- " + item.name + " x " + item.quantity);
   });
-  const photoUrl = orderPhotoUrl(order, settings);
-  if (photoUrl) {
+  const uploads = orderUploads(order);
+  if (uploads.length) {
     lines.push("");
-    lines.push("Uploaded photo: " + photoUrl);
+    uploads.forEach((upload, index) => {
+      lines.push((upload.label || "Uploaded photo " + (index + 1)) + ": " + absoluteUploadUrl(upload, settings));
+    });
   }
   lines.push("");
   lines.push("Please reply here for preview, payment, or delivery updates.");
@@ -474,8 +622,11 @@ function buildCustomerWhatsAppText(order, settings) {
 }
 
 function orderForResponse(order, settings) {
+  const uploads = orderUploads(order);
   return {
     ...order,
+    upload: uploads[0] || null,
+    uploads,
     payment: paymentForOrder(order),
     whatsappUrl: buildWhatsAppText(order, settings),
     customerWhatsappUrl: buildCustomerWhatsAppText(order, settings)
@@ -706,6 +857,54 @@ async function handleApi(req, res, pathname, url) {
     return;
   }
 
+  if (req.method === "GET" && pathname === "/api/cart") {
+    const user = requireUser(req, res, db);
+    if (!user) {
+      return;
+    }
+    const cart = userCart(db, user.id);
+    const items = normalizeCartItems(db, cart.items || []);
+    cart.items = items;
+    cart.updatedAt = now();
+    await writeDb(db);
+    json(res, 200, { ok: true, cart: { items, updatedAt: cart.updatedAt } });
+    return;
+  }
+
+  if (req.method === "PUT" && pathname === "/api/cart") {
+    const user = requireUser(req, res, db);
+    if (!user) {
+      return;
+    }
+    const body = await readBody(req);
+    let items;
+    try {
+      items = normalizeCartItems(db, body.items || []);
+    } catch (cartError) {
+      error(res, 400, cartError.message);
+      return;
+    }
+    const cart = userCart(db, user.id);
+    cart.items = items;
+    cart.updatedAt = now();
+    await writeDb(db);
+    json(res, 200, { ok: true, cart: { items, updatedAt: cart.updatedAt } });
+    return;
+  }
+
+  if (req.method === "DELETE" && pathname === "/api/cart") {
+    const user = requireUser(req, res, db);
+    if (!user) {
+      return;
+    }
+    const cart = userCart(db, user.id);
+    cart.items = [];
+    cart.updatedAt = now();
+    await writeDb(db);
+    json(res, 200, { ok: true, cart: { items: [], updatedAt: cart.updatedAt } });
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/orders") {
     const user = requireUser(req, res, db);
     if (!user) {
@@ -717,10 +916,35 @@ async function handleApi(req, res, pathname, url) {
     return;
   }
 
+  const orderDetailMatch = pathname.match(/^\/api\/orders\/([^/]+)$/);
+  if (req.method === "GET" && orderDetailMatch) {
+    const user = requireUser(req, res, db);
+    if (!user) {
+      return;
+    }
+    const order = (db.orders || []).find((entry) => entry.id === orderDetailMatch[1]);
+    if (!order || (user.role !== "admin" && order.userId !== user.id)) {
+      error(res, 404, "Order not found.");
+      return;
+    }
+    json(res, 200, { ok: true, order: orderForResponse(order, db.settings) });
+    return;
+  }
+
   if (req.method === "POST" && pathname === "/api/orders") {
+    const user = requireUser(req, res, db);
+    if (!user) {
+      return;
+    }
     const body = await readBody(req);
-    const customer = body.customer || {};
-    const missing = requireFields(customer, ["name", "phone"]);
+    const inputCustomer = body.customer || {};
+    const customer = {
+      name: String(inputCustomer.name || user.name || "").trim(),
+      phone: String(inputCustomer.phone || user.phone || "").trim(),
+      email: normalizeEmail(inputCustomer.email || user.email),
+      address: String(inputCustomer.address || user.address || "").trim()
+    };
+    const missing = requireFields(customer, ["name", "phone", "address"]);
     if (missing) {
       error(res, 400, missing);
       return;
@@ -729,60 +953,70 @@ async function handleApi(req, res, pathname, url) {
       error(res, 400, "Please enter a valid phone number.");
       return;
     }
-    const user = currentUser(req, db);
     const items = Array.isArray(body.items) ? body.items : [];
     if (!items.length) {
       error(res, 400, "Your cart is empty.");
       return;
     }
     let total = 0;
-    const normalizedItems = [];
-    for (const item of items) {
-      const product = db.products.find((entry) => entry.id === item.productId);
-      if (!product) {
-        error(res, 400, "Invalid product in cart.");
-        return;
-      }
-      const quantity = Math.min(50, Math.max(1, Number(item.quantity) || 1));
-      const selectedOptions = item.options && typeof item.options === "object" ? item.options : {};
-      const unitPrice = productPrice(product, selectedOptions);
-      total += unitPrice * quantity;
-      normalizedItems.push({
-        productId: product.id,
-        name: product.name,
-        quantity,
-        unitPrice,
-        options: selectedOptions
-      });
-    }
-    let upload = null;
+    let normalizedItems = [];
     try {
-      upload = await saveUpload(body.upload);
+      normalizedItems = normalizeCartItems(db, items);
+    } catch (cartError) {
+      error(res, 400, cartError.message);
+      return;
+    }
+    normalizedItems.forEach((item) => {
+      total += item.unitPrice * item.quantity;
+    });
+    const rawUploads = normalizeRawUploads(Array.isArray(body.uploads) ? body.uploads : (body.upload ? [body.upload] : []), normalizedItems);
+    try {
+      validateOrderUploads(normalizedItems, rawUploads, db.products);
+    } catch (validationError) {
+      error(res, 400, validationError.message);
+      return;
+    }
+    let uploads = [];
+    try {
+      uploads = await saveUploads(rawUploads);
     } catch (uploadError) {
       error(res, 400, uploadError.message);
       return;
     }
+    if (customer.address) {
+      user.address = customer.address.slice(0, 200);
+    }
+    if (customer.name) {
+      user.name = customer.name.slice(0, 80);
+    }
+    if (customer.phone) {
+      user.phone = customer.phone;
+    }
     const order = {
       id: orderId(db),
-      userId: user ? user.id : null,
+      userId: user.id,
       customer: {
         name: String(customer.name).trim().slice(0, 80),
-        email: normalizeEmail(customer.email),
+        email: customer.email,
         phone: String(customer.phone).trim(),
         address: String(customer.address || "").trim().slice(0, 200)
       },
       items: normalizedItems,
       notes: String(body.notes || "").trim().slice(0, 800),
-      upload,
+      upload: uploads[0] || null,
+      uploads,
       total,
       payment: paymentFromInput(body.payment, total),
-      status: "New",
+      status: "Pending",
       createdAt: now(),
       updatedAt: now()
     };
     order.whatsappUrl = buildWhatsAppText(order, db.settings);
     order.customerWhatsappUrl = buildCustomerWhatsAppText(order, db.settings);
     db.orders.unshift(order);
+    const cart = userCart(db, user.id);
+    cart.items = [];
+    cart.updatedAt = now();
     await writeDb(db);
     json(res, 201, { ok: true, order });
     return;
@@ -795,8 +1029,7 @@ async function handleApi(req, res, pathname, url) {
       return;
     }
     const body = await readBody(req);
-    const allowed = ["New", "Preview", "Approved", "Printing", "Ready", "Delivered", "Cancelled"];
-    if (!allowed.includes(body.status)) {
+    if (!ORDER_STATUSES.includes(body.status)) {
       error(res, 400, "Invalid order status.");
       return;
     }

@@ -10,3 +10,11 @@ services:
         value: 20
       - key: HOST
         value: 0.0.0.0
+      - key: DATA_FILE
+        value: /var/data/db.json
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+    disk:
+      name: karimnagar-frames-data
+      mountPath: /var/data
+      sizeGB: 1
