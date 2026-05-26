@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node --check server.js && node --check public/app.js && node --check public/auth.js && node --check public/dashboard.js && node --check public/product.js && node --check public/confirmation.js && node --check public/owner-products.js && node scripts/smoke-test.js",
+    "test": "node --check server.js && node --check public/app.js && node --check public/auth.js && node --check public/dashboard.js && node --check public/product.js && node --check public/preview.js && node --check public/preview-3d.js && node --check public/confirmation.js && node --check public/owner-products.js && node scripts/smoke-test.js",
     "audit:orders": "node scripts/product-order-audit.js",
     "audit:ui": "node scripts/ui-checkout-audit.js"
   },

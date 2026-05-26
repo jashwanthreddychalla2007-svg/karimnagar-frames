@@ -313,6 +313,7 @@ const ProductPage = (() => {
             <span>Estimated total</span>
             <strong data-pdp-total>${money(product.basePrice)}</strong>
           </div>
+          <a class="btn btn-soft" href="/preview.html?id=${product.id}">Open 3D Preview</a>
           <button class="btn" type="button" data-add-detail>Add to Cart</button>
           <a class="btn btn-outline" href="/?cart=open">Checkout Cart</a>
           <a class="btn btn-soft" href="https://wa.me/9032428063?text=${encodeURIComponent("I want to customize " + product.name)}" target="_blank" rel="noopener">Ask on WhatsApp</a>
@@ -450,7 +451,10 @@ const ProductPage = (() => {
             <strong>${money(product.basePrice)}</strong>
             <span>${product.rating} rating</span>
           </div>
-          <a class="btn" href="/product.html?id=${product.id}">View Details</a>
+          <div class="card-actions">
+            <a class="btn" href="/product.html?id=${product.id}">View Details</a>
+            <a class="btn btn-soft" href="/preview.html?id=${product.id}">3D Preview</a>
+          </div>
         </div>
       </article>
     `).join("");

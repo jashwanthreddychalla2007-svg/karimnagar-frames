@@ -1398,6 +1398,268 @@ dialog::backdrop {
   gap: 18px;
 }
 
+.preview-page-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.preview-stage-card,
+.preview-config-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.preview-stage-card {
+  position: sticky;
+  top: 94px;
+  overflow: hidden;
+  min-height: 640px;
+}
+
+.preview-stage-head {
+  position: absolute;
+  inset: 18px 18px auto 18px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.preview-stage-head h1 {
+  margin: 0;
+  max-width: 540px;
+  font-size: clamp(2rem, 4vw, 3.75rem);
+}
+
+.preview-stage-head span {
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: #17202a;
+  background: rgba(255, 255, 255, 0.7);
+  text-transform: capitalize;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  font-weight: 900;
+  backdrop-filter: blur(12px);
+}
+
+.three-preview-stage {
+  position: relative;
+  min-height: 640px;
+  background:
+    radial-gradient(circle at 50% 78%, rgba(23, 32, 42, 0.12), transparent 7rem),
+    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.9), transparent 15rem),
+    linear-gradient(180deg, #f4efe6, #d7cebd);
+}
+
+.three-preview-stage canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  min-height: 640px;
+  cursor: grab;
+}
+
+.three-preview-stage canvas:active {
+  cursor: grabbing;
+}
+
+.combo-scene-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  min-height: 640px;
+  padding: 112px 16px 92px;
+  background:
+    radial-gradient(circle at 50% 78%, rgba(23, 32, 42, 0.12), transparent 7rem),
+    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.9), transparent 15rem),
+    linear-gradient(180deg, #f4efe6, #d7cebd);
+}
+
+.combo-scene-card {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid rgba(23, 32, 42, 0.12);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.72);
+  box-shadow: 0 14px 32px rgba(23, 32, 42, 0.08);
+}
+
+.combo-scene-card > span {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.76);
+  font-size: 0.75rem;
+  font-weight: 900;
+  backdrop-filter: blur(10px);
+}
+
+.combo-scene-canvas,
+.combo-scene-canvas canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  display: block;
+}
+
+.preview-toolbar {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.combo-preview-strip {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 82px;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+  gap: 8px;
+}
+
+.combo-preview-tile {
+  border: 1px solid rgba(23, 32, 42, 0.14);
+  border-radius: var(--radius);
+  padding: 10px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.78);
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(23, 32, 42, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.combo-preview-tile.is-active {
+  color: #ffffff;
+  background: var(--ink);
+}
+
+.preview-note {
+  position: absolute;
+  right: 18px;
+  bottom: 22px;
+  z-index: 2;
+  width: min(320px, 46%);
+  margin: 0;
+  color: rgba(23, 32, 42, 0.72);
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+.preview-config-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.preview-product-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius);
+  object-fit: cover;
+  background: var(--cream);
+}
+
+.preview-config-card > p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.preview-accuracy-note {
+  display: grid;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--teal) 34%, var(--line));
+  border-radius: var(--radius);
+  padding: 12px;
+  background: color-mix(in srgb, var(--teal) 8%, var(--panel));
+}
+
+.preview-accuracy-note strong {
+  font-size: 0.9rem;
+}
+
+.preview-accuracy-note span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  font-weight: 800;
+}
+
+.preview-upload-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.preview-upload-slot {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  color: var(--muted);
+  background: var(--paper);
+  font-weight: 900;
+}
+
+.preview-upload-slot input {
+  background: var(--panel);
+}
+
+.preview-upload-slot input[type="file"] {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+
+.preview-upload-slot small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.preview-select-row {
+  display: grid;
+  gap: 8px;
+}
+
+.preview-select-row select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  color: var(--ink);
+  background: var(--panel);
+  font-weight: 800;
+}
+
+.preview-action-row {
+  display: grid;
+  gap: 10px;
+}
+
 .check-list {
   display: grid;
   gap: 12px;
@@ -2316,6 +2578,7 @@ th {
   .pdp-info-grid,
   .auth-shell,
   .dashboard-page,
+  .preview-page-shell,
   .product-manager-layout {
     grid-template-columns: 1fr;
   }
@@ -2351,6 +2614,11 @@ th {
 
   .pdp-config {
     position: static;
+  }
+
+  .preview-stage-card {
+    position: relative;
+    top: auto;
   }
 
   .auth-art {
@@ -2434,6 +2702,80 @@ th {
 
   .modal-product img {
     height: 300px;
+  }
+
+  .preview-stage-card,
+  .three-preview-stage,
+  .three-preview-stage canvas,
+  .combo-scene-grid {
+    min-height: 350px;
+  }
+
+  .combo-scene-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 94px 12px 78px;
+  }
+
+  .combo-scene-card,
+  .combo-scene-canvas,
+  .combo-scene-canvas canvas {
+    min-height: 170px;
+  }
+
+  .preview-stage-head {
+    position: absolute;
+    inset: 14px 14px auto 14px;
+    padding: 0;
+  }
+
+  .preview-stage-head h1 {
+    font-size: clamp(1.85rem, 10vw, 2.65rem);
+    line-height: 0.98;
+  }
+
+  .preview-stage-head span {
+    padding: 6px 9px;
+    font-size: 0.72rem;
+  }
+
+  .preview-note {
+    display: none;
+  }
+
+  .preview-toolbar {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    padding: 0;
+  }
+
+  .preview-toolbar .btn {
+    padding: 11px 13px;
+  }
+
+  .combo-preview-strip {
+    left: 12px;
+    right: 12px;
+    bottom: 76px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .combo-preview-tile {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+
+  .preview-config-card {
+    padding: 14px;
+  }
+
+  .preview-product-thumb {
+    display: none;
+  }
+
+  .preview-page .floating-whatsapp {
+    display: none;
   }
 
   .floating-whatsapp {

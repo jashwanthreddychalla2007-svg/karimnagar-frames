@@ -421,6 +421,7 @@ const StoreApp = (() => {
           </div>
           <div class="card-actions">
             <a class="btn" href="/product.html?id=${product.id}">View Details</a>
+            <a class="btn btn-soft" href="/preview.html?id=${product.id}">3D Preview</a>
             <button class="btn btn-soft" type="button" data-product-detail="${product.id}">Customize</button>
             <button class="btn btn-outline" type="button" data-quick-add="${product.id}">Add</button>
           </div>
@@ -509,6 +510,7 @@ const StoreApp = (() => {
             <span>Estimated total</span>
             <strong data-modal-total>${money(product.basePrice)}</strong>
           </div>
+          <a class="btn btn-soft" href="/preview.html?id=${product.id}">Open 3D Preview</a>
           <button class="btn" type="button" data-modal-add>Add to Cart</button>
         </div>
       </div>

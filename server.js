@@ -589,6 +589,7 @@ function buildSitemap(db) {
   (db.products || []).filter(isProductAvailable).forEach((product) => {
     const loc = base + "/product.html?id=" + encodeURIComponent(product.id);
     entries.push(sitemapUrlEntry(loc, product.updatedAt || (db.meta && db.meta.updatedAt), product.featured ? 0.9 : 0.8));
+    entries.push(sitemapUrlEntry(base + "/preview.html?id=" + encodeURIComponent(product.id), product.updatedAt || (db.meta && db.meta.updatedAt), 0.6));
   });
   return [
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
