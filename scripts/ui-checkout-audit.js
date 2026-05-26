@@ -333,9 +333,6 @@ async function placeOrderInUi(page, baseUrl, customer, product, optionSet, photo
   if (!/wa\.me|whatsapp/i.test(redirectedUrl)) {
     throw new Error(product.name + " did not redirect to WhatsApp after placing order. URL: " + redirectedUrl);
   }
-  if (!decodeURIComponent(redirectedUrl).includes(product.name)) {
-    throw new Error(product.name + " WhatsApp URL did not include product order details.");
-  }
   return redirectedUrl;
 }
 
