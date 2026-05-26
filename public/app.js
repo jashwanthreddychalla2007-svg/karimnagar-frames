@@ -134,6 +134,16 @@ const StoreApp = (() => {
     return String(value).replace(/'/g, "\\'");
   }
 
+  function escapeHtml(value) {
+    return String(value || "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#39;"
+    }[char]));
+  }
+
   function cartKey(item) {
     return item.cartKey || (item.productId + "::" + JSON.stringify(item.options || {}) + "::" + JSON.stringify(item.customFields || {}));
   }
@@ -214,7 +224,7 @@ const StoreApp = (() => {
     }
     const rawDataUrl = await readFileAsDataUrl(file);
     const image = await loadImage(rawDataUrl);
-    const maxSide = 1400;
+    const maxSide = 1100;
     const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
     const width = Math.max(1, Math.round(image.width * scale));
     const height = Math.max(1, Math.round(image.height * scale));
@@ -225,11 +235,11 @@ const StoreApp = (() => {
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, width, height);
     context.drawImage(image, 0, 0, width, height);
-    let dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-    if (estimateDataUrlBytes(dataUrl) > 1.2 * 1024 * 1024) {
-      dataUrl = canvas.toDataURL("image/jpeg", 0.68);
+    let dataUrl = canvas.toDataURL("image/jpeg", 0.76);
+    if (estimateDataUrlBytes(dataUrl) > 850 * 1024) {
+      dataUrl = canvas.toDataURL("image/jpeg", 0.58);
     }
-    if (estimateDataUrlBytes(dataUrl) > 4 * 1024 * 1024) {
+    if (estimateDataUrlBytes(dataUrl) > 2 * 1024 * 1024) {
       throw new Error("This photo is still too large after optimization. Please crop or choose a smaller photo.");
     }
     return {
@@ -237,6 +247,15 @@ const StoreApp = (() => {
       dataUrl,
       size: estimateDataUrlBytes(dataUrl)
     };
+  }
+
+  function redirectAfterOrder(order) {
+    const confirmationUrl = "/confirmation.html?order=" + encodeURIComponent(order.id);
+    if (order.whatsappUrl) {
+      window.location.href = order.whatsappUrl;
+      return;
+    }
+    window.location.href = confirmationUrl;
   }
 
   async function addToCart(product, options = {}, quantity = 1, customFields = {}) {
@@ -510,7 +529,7 @@ const StoreApp = (() => {
       return `
         <article class="upload-group">
           <div>
-            <strong>${item.name}</strong>
+            <strong>${escapeHtml(item.name)}</strong>
             <small>${requirement.min} required, up to ${requirement.max} photo${requirement.max === 1 ? "" : "s"}</small>
           </div>
           <div class="upload-grid">
@@ -520,11 +539,11 @@ const StoreApp = (() => {
               const required = index < requirement.min;
               return `
                 <label class="upload-box">
-                  <span>${label}${required ? " *" : ""}</span>
-                  <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" data-upload-slot="${slotKey}" data-upload-label="${label}" data-upload-item="${key}" data-upload-product="${item.productId}" data-upload-required="${required ? "true" : "false"}" aria-required="${required ? "true" : "false"}" />
+                  <span>${escapeHtml(label)}${required ? " *" : ""}</span>
+                  <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" data-upload-slot="${escapeHtml(slotKey)}" data-upload-label="${escapeHtml(label)}" data-upload-item="${escapeHtml(key)}" data-upload-product="${escapeHtml(item.productId)}" data-upload-required="${required ? "true" : "false"}" aria-required="${required ? "true" : "false"}" />
                   <small>PNG, JPG, JPEG, or WEBP under 12 MB. We optimize it before upload.</small>
-                  <div class="upload-preview mini-preview" data-upload-preview="${slotKey}" ${saved ? "" : "hidden"}>
-                    ${saved ? `<img src="${saved.dataUrl}" alt="${label} preview" />` : ""}
+                  <div class="upload-preview mini-preview" data-upload-preview="${escapeHtml(slotKey)}" ${saved ? "" : "hidden"}>
+                    ${saved ? `<img src="${saved.dataUrl}" alt="${escapeHtml(label)} preview" />` : ""}
                   </div>
                 </label>
               `;
@@ -542,7 +561,7 @@ const StoreApp = (() => {
 
   function handleUploadSlot(input) {
     const file = input.files[0];
-    const preview = qs("[data-upload-preview='" + cssEscape(input.dataset.uploadSlot) + "']");
+    const preview = qsa("[data-upload-preview]").find((node) => node.dataset.uploadPreview === input.dataset.uploadSlot);
     delete state.uploads[input.dataset.uploadSlot];
     if (preview) {
       preview.hidden = true;
@@ -716,9 +735,14 @@ const StoreApp = (() => {
       });
     }
     if (form) {
-      form.addEventListener("submit", async (event) => {
+      let checkoutBusy = false;
+      const placeOrderButton = qs("[data-place-order]", form);
+      const placeOrder = async (event) => {
         event.preventDefault();
-        const submitButton = form.querySelector("button[type='submit']");
+        const submitButton = placeOrderButton || form.querySelector("button[type='submit']");
+        if (checkoutBusy) {
+          return;
+        }
         if (!requireLogin("Please login before placing an order.")) {
           return;
         }
@@ -727,6 +751,7 @@ const StoreApp = (() => {
           return;
         }
         try {
+          checkoutBusy = true;
           if (submitButton) {
             submitButton.disabled = true;
             submitButton.textContent = "Placing Order...";
@@ -761,22 +786,26 @@ const StoreApp = (() => {
           });
           state.cart = [];
           state.uploads = {};
-          await saveCart();
           renderCart();
           form.reset();
           modal.close();
           closeCart();
-          toast("Order placed: " + result.order.id + ".");
-          window.location.href = "/confirmation.html?order=" + encodeURIComponent(result.order.id);
+          toast("Order placed: " + result.order.id + ". Opening WhatsApp...");
+          window.setTimeout(() => redirectAfterOrder(result.order), 250);
         } catch (error) {
           toast(error.message, "error");
         } finally {
+          checkoutBusy = false;
           if (submitButton) {
             submitButton.disabled = false;
             submitButton.textContent = "Place Order";
           }
         }
-      });
+      };
+      form.addEventListener("submit", placeOrder);
+      if (placeOrderButton) {
+        placeOrderButton.addEventListener("click", placeOrder);
+      }
     }
   }
 
