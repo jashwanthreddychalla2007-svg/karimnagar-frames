@@ -10,7 +10,9 @@ const StoreApp = (() => {
     cart: [],
     uploads: {},
     uploadTasks: {},
-    galleryIndex: 0
+    galleryIndex: 0,
+    motionObserver: null,
+    lastCartCount: null
   };
 
   const money = (value) => "Rs. " + (Number(value) || 0).toLocaleString("en-IN");
@@ -150,6 +152,111 @@ const StoreApp = (() => {
 
   function productById(productId) {
     return state.products.find((product) => product.id === productId);
+  }
+
+  function motionDisabled() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function setupHeaderMotion() {
+    const header = qs(".site-header");
+    if (!header) {
+      return;
+    }
+    const updateHeader = () => {
+      header.classList.toggle("is-scrolled", window.scrollY > 8);
+    };
+    updateHeader();
+    window.addEventListener("scroll", updateHeader, { passive: true });
+  }
+
+  function decorateMotionTargets(root = document) {
+    const selector = [
+      ".hero-copy > *",
+      ".category-strip span",
+      ".section-heading",
+      ".product-card",
+      ".masonry-gallery img",
+      ".process-grid article",
+      ".review-grid article",
+      ".faq details",
+      ".contact-section > *",
+      ".site-footer > *"
+    ].join(",");
+
+    qsa(selector, root).forEach((element, index) => {
+      if (element.dataset.motionBound) {
+        return;
+      }
+      element.dataset.motionBound = "true";
+      element.classList.add("motion-reveal");
+      element.style.setProperty("--motion-delay", Math.min((index % 6) * 55, 275) + "ms");
+      if (motionDisabled() || !state.motionObserver) {
+        element.classList.add("is-visible");
+        return;
+      }
+      state.motionObserver.observe(element);
+    });
+  }
+
+  function setupMotionReveal() {
+    if (motionDisabled() || !("IntersectionObserver" in window)) {
+      decorateMotionTargets();
+      return;
+    }
+    state.motionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) {
+          return;
+        }
+        entry.target.classList.add("is-visible");
+        state.motionObserver.unobserve(entry.target);
+      });
+    }, {
+      threshold: 0.14,
+      rootMargin: "0px 0px -8% 0px"
+    });
+    decorateMotionTargets();
+  }
+
+  function bindTiltCards(root = document) {
+    if (motionDisabled()) {
+      return;
+    }
+    qsa(".product-card", root).forEach((card) => {
+      if (card.dataset.tiltBound) {
+        return;
+      }
+      card.dataset.tiltBound = "true";
+      card.addEventListener("pointermove", (event) => {
+        if (event.pointerType === "touch") {
+          return;
+        }
+        const rect = card.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) - 0.5;
+        const y = ((event.clientY - rect.top) / rect.height) - 0.5;
+        card.style.setProperty("--tilt-x", (x * 4).toFixed(2) + "deg");
+        card.style.setProperty("--tilt-y", (-y * 3).toFixed(2) + "deg");
+      });
+      card.addEventListener("pointerleave", () => {
+        card.style.setProperty("--tilt-x", "0deg");
+        card.style.setProperty("--tilt-y", "0deg");
+      });
+    });
+  }
+
+  function updateCartCountBadge(count) {
+    qsa("[data-cart-count]").forEach((node) => {
+      node.textContent = count;
+    });
+    const floatingCart = qs(".floating-cart");
+    if (floatingCart && state.lastCartCount !== null && count !== state.lastCartCount) {
+      floatingCart.classList.remove("cart-pulse");
+      void floatingCart.offsetWidth;
+      floatingCart.classList.add("cart-pulse");
+      window.setTimeout(() => floatingCart.classList.remove("cart-pulse"), 480);
+    }
+    state.lastCartCount = count;
   }
 
   function normalizeOptionValue(value) {
@@ -339,6 +446,8 @@ const StoreApp = (() => {
         addToCart(product, options, 1);
       });
     });
+    decorateMotionTargets(grid);
+    bindTiltCards(grid);
   }
 
   function optionMarkup(product) {
@@ -440,9 +549,7 @@ const StoreApp = (() => {
     const empty = qs("[data-cart-empty]");
     const total = qs("[data-cart-total]");
     const summary = qs("[data-checkout-summary]");
-    qsa("[data-cart-count]").forEach((node) => {
-      node.textContent = state.cart.reduce((sum, item) => sum + item.quantity, 0);
-    });
+    updateCartCountBadge(state.cart.reduce((sum, item) => sum + item.quantity, 0));
     const validUploadPrefixes = state.cart.map((item) => cartKey(item) + "::");
     Object.keys(state.uploads).forEach((key) => {
       if (!validUploadPrefixes.some((prefix) => key.startsWith(prefix))) {
@@ -849,6 +956,8 @@ const StoreApp = (() => {
   async function init() {
     setLoading(true);
     setupNavigation();
+    setupHeaderMotion();
+    setupMotionReveal();
     setupGallery();
     setupFilters();
     setupCheckout();
