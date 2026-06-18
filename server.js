@@ -562,6 +562,103 @@ function xmlEscape(value) {
     .replace(/'/g, "&apos;");
 }
 
+function publicBaseUrl(db) {
+  return String(db.settings && db.settings.publicUrl || "https://karimnagar-frames.onrender.com").replace(/\/$/, "");
+}
+
+function absolutePublicUrl(db, value) {
+  const url = String(value || "");
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+  return publicBaseUrl(db) + (url.startsWith("/") ? url : "/" + url);
+}
+
+function shortSeoText(value, fallback, max = 155) {
+  const text = String(value || fallback || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? text.slice(0, max - 1).trimEnd() + "…" : text;
+}
+
+function safeJsonLd(payload) {
+  return JSON.stringify(payload, null, 2).replace(/</g, "\\u003c");
+}
+
+function replaceHeadTag(html, pattern, replacement) {
+  return pattern.test(html) ? html.replace(pattern, replacement) : html.replace("</head>", replacement + "\n</head>");
+}
+
+function productSeoPayload(db, product, pageType = "product") {
+  const base = publicBaseUrl(db);
+  const settings = db.settings || {};
+  const isPreview = pageType === "preview";
+  const productPath = "/product.html?id=" + encodeURIComponent(product.id);
+  const pagePath = (isPreview ? "/preview.html?id=" : "/product.html?id=") + encodeURIComponent(product.id);
+  const title = (isPreview ? "3D Preview - " : "") + product.name + " | Karimnagar Frames";
+  const description = shortSeoText(
+    product.summary || product.description,
+    "Order " + product.name + " from Karimnagar Frames with photo upload, WhatsApp preview, and order tracking."
+  );
+  const image = absolutePublicUrl(db, product.images && product.images[0] || "/assets/products/placeholders/product-placeholder.svg");
+  const url = base + pagePath;
+  const productUrl = base + productPath;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "description": description,
+    "image": [image],
+    "url": productUrl,
+    "brand": {
+      "@type": "Brand",
+      "name": "Karimnagar Frames"
+    },
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "INR",
+      "price": String(Number(product.basePrice) || 0),
+      "availability": "https://schema.org/" + (isProductAvailable(product) ? "InStock" : "OutOfStock"),
+      "url": productUrl
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": String(Number(product.rating) || 4.7),
+      "reviewCount": "24"
+    },
+    "seller": {
+      "@type": "Store",
+      "name": settings.storeName || "Karimnagar Frames",
+      "telephone": settings.primaryPhone || "9032428063",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Karimnagar",
+        "addressRegion": "Telangana",
+        "addressCountry": "IN"
+      }
+    }
+  };
+  return { title, description, image, url, jsonLd };
+}
+
+async function sendSeoProductHtml(res, db, product, pageType) {
+  const file = path.join(PUBLIC_DIR, pageType === "preview" ? "preview.html" : "product.html");
+  let html = await fsp.readFile(file, "utf8");
+  const seo = productSeoPayload(db, product, pageType);
+  html = replaceHeadTag(html, /<title>[\s\S]*?<\/title>/i, "<title>" + xmlEscape(seo.title) + "</title>");
+  html = replaceHeadTag(html, /<meta name="description" content="[^"]*"\s*\/?>/i, "<meta name=\"description\" content=\"" + xmlEscape(seo.description) + "\" />");
+  html = replaceHeadTag(html, /<meta property="og:title" content="[^"]*"\s*\/?>/i, "<meta property=\"og:title\" content=\"" + xmlEscape(seo.title) + "\" />");
+  html = replaceHeadTag(html, /<meta property="og:description" content="[^"]*"\s*\/?>/i, "<meta property=\"og:description\" content=\"" + xmlEscape(seo.description) + "\" />");
+  html = replaceHeadTag(html, /<meta property="og:url" content="[^"]*"\s*\/?>/i, "<meta property=\"og:url\" content=\"" + xmlEscape(seo.url) + "\" />");
+  html = replaceHeadTag(html, /<link rel="canonical" href="[^"]*"\s*\/?>/i, "<link rel=\"canonical\" href=\"" + xmlEscape(seo.url) + "\" />");
+  html = replaceHeadTag(html, /<meta property="og:image" content="[^"]*"\s*\/?>/i, "<meta property=\"og:image\" content=\"" + xmlEscape(seo.image) + "\" />");
+  html = html.replace("</head>", "<script type=\"application/ld+json\">" + safeJsonLd(seo.jsonLd) + "</script>\n</head>");
+  send(res, 200, html, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store"
+  });
+}
+
 function sitemapDate(value) {
   const date = value ? new Date(value) : new Date();
   if (Number.isNaN(date.getTime())) {
@@ -1929,7 +2026,7 @@ async function handleApi(req, res, pathname, url) {
   error(res, 404, "API route not found.");
 }
 
-async function serveStatic(req, res, pathname) {
+async function serveStatic(req, res, pathname, url) {
   if (pathname === "/sitemap.xml") {
     const db = await readDb();
     send(res, 200, buildSitemap(db), {
@@ -1964,6 +2061,9 @@ async function serveStatic(req, res, pathname) {
   if (requestedPath === "/product") {
     requestedPath = "/product.html";
   }
+  if (requestedPath === "/preview") {
+    requestedPath = "/preview.html";
+  }
   if (requestedPath === "/owner-dashboard.html" || requestedPath === "/owner-products.html") {
     const db = await readDb();
     const user = currentUser(req, db);
@@ -1996,6 +2096,16 @@ async function serveStatic(req, res, pathname) {
     }
     await streamFile(res, uploadFile);
     return;
+  }
+
+  if ((requestedPath === "/product.html" || requestedPath === "/preview.html") && url && url.searchParams.get("id")) {
+    const db = await readDb();
+    const productId = url.searchParams.get("id");
+    const product = (db.products || []).find((item) => item.id === productId && isProductAvailable(item));
+    if (product) {
+      await sendSeoProductHtml(res, db, product, requestedPath === "/preview.html" ? "preview" : "product");
+      return;
+    }
   }
 
   const file = path.resolve(PUBLIC_DIR, "." + requestedPath);
@@ -2039,7 +2149,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    await serveStatic(req, res, pathname);
+    await serveStatic(req, res, pathname, url);
   } catch (routeError) {
     if (!res.headersSent) {
       if (routeError.statusCode === 413) {
